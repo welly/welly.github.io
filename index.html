@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>G3AJM · Mac tools for radio amateurs</title>
+<meta name="description" content="Free, open-source macOS tools for amateur radio by Alastair Moore, G3AJM.">
+<link rel="icon" href="images/favicon.png">
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --card: #ffffff;
+    --text: #1d2327;
+    --muted: #5d676e;
+    --line: #e2ded5;
+    --accent: #1f6e6a;
+    --accent-text: #ffffff;
+    --soft: #e8f1ef;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12181b;
+      --card: #1a2226;
+      --text: #e7ecee;
+      --muted: #9aa6ac;
+      --line: #2a3439;
+      --accent: #3fa79c;
+      --accent-text: #0c1214;
+      --soft: #1d2d2e;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 17px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 56px 16px 32px; }
+  header h1 {
+    margin: 0;
+    font: 700 44px/1.1 ui-monospace, "SF Mono", Menlo, monospace;
+    letter-spacing: 0.04em;
+  }
+  header p { margin: 8px 0 0; color: var(--muted); font-size: 19px; }
+  h2 { margin: 48px 0 16px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .app {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 20px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .app img { width: 96px; height: 96px; }
+  .app h3 { margin: 0; font-size: 22px; }
+  .app .req { margin: 2px 0 10px; color: var(--muted); font-size: 14px; }
+  .app p { margin: 0 0 10px; }
+  .app ul { margin: 0 0 16px; padding-left: 20px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .button {
+    display: inline-block;
+    padding: 9px 16px;
+    border-radius: 9px;
+    font-weight: 600;
+    font-size: 15px;
+    text-decoration: none;
+    border: 1px solid var(--accent);
+  }
+  .button.primary { background: var(--accent); color: var(--accent-text); }
+  .button.secondary { color: var(--accent); }
+  .button.disabled { border-color: var(--line); color: var(--muted); cursor: default; }
+  .note {
+    background: var(--soft);
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-size: 15px;
+  }
+  .note p { margin: 0 0 6px; }
+  .note p:last-child { margin: 0; }
+  a { color: var(--accent); }
+  footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+  @media (max-width: 520px) {
+    header h1 { font-size: 36px; }
+    .app { grid-template-columns: 1fr; }
+    .app img { width: 72px; height: 72px; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>G3AJM</h1>
+    <p>Alastair Moore · small, free Mac tools for radio amateurs</p>
+  </header>
+
+  <h2>Apps</h2>
+
+  <section class="app">
+    <img src="images/locator.png" alt="Locator icon">
+    <div>
+      <h3>Locator</h3>
+      <div class="req">Menu bar app · macOS 14 or later · Intel and Apple Silicon</div>
+      <p>Your Maidenhead locator in the menu bar, worked out from your Mac’s location. Click it for:</p>
+      <ul>
+        <li>8-character locator, coordinates, and fix accuracy and time (UTC)</li>
+        <li>CQ zone and ITU zone</li>
+        <li>WAB square in Great Britain, the Isle of Man, Ireland and the Channel Islands</li>
+        <li>Click any value to copy it</li>
+      </ul>
+      <p>Everything is worked out on your Mac; your position isn’t sent anywhere.</p>
+      <div class="actions">
+        <a class="button primary" href="https://github.com/welly/locator-bar/releases/download/v1.0/Locator-1.0.zip">Download 1.0</a>
+        <a class="button secondary" href="https://github.com/welly/locator-bar">Source on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="app">
+    <img src="images/cw-notebook.png" alt="CW Notebook icon">
+    <div>
+      <h3>CW Notebook</h3>
+      <div class="req">macOS 15 or later · Intel and Apple Silicon</div>
+      <p>A simple note taker for CW operating, in the style of Apple Notes, with a reference panel beside your notes.</p>
+      <ul>
+        <li>Everything comes out in capitals, without Caps Lock</li>
+        <li>Prosigns, Q-codes and abbreviations: search, then click to insert</li>
+        <li>Live UTC clock; click it to insert the time</li>
+        <li>Notes are plain Markdown files in iCloud Drive, with folders</li>
+      </ul>
+      <div class="actions">
+        <span class="button disabled">Download coming soon</span>
+        <a class="button secondary" href="https://github.com/welly/cw_notebook">Source on GitHub</a>
+      </div>
+    </div>
+  </section>
+
+  <h2>Installing</h2>
+  <div class="note">
+    <p>Unzip the download and move the app to your Applications folder.</p>
+    <p>The apps aren’t notarised by Apple, so the first time you open one, macOS will refuse. Go to
+      <strong>System Settings › Privacy &amp; Security</strong>, scroll down and click <strong>Open Anyway</strong>.
+      You only need to do this once.</p>
+  </div>
+
+  <footer>
+    73 de G3AJM · Apps are free and open source under the MIT licence ·
+    <a href="https://github.com/welly">github.com/welly</a>
+  </footer>
+</main>
+</body>
+</html>

@@ -208,6 +208,11 @@ function ensureAudio() {
 const isPlaying = () => !!source;
 const duration = () => (buffer ? buffer.duration : 0);
 const currentTime = () => (source ? Math.min(duration(), offset + audio.currentTime - startedAt) : offset);
+/// How far behind the audio clock the sound reaches the ears: the browser's own buffering plus the output device
+/// (tens of ms on built-in speakers, 150-250 ms on Bluetooth headphones). Safari doesn't report the device part.
+const latency = () => (audio ? (audio.baseLatency || 0) + (audio.outputLatency || 0) : 0);
+/// The point in the QSO being heard now: what the highlight, over list and scrubber follow.
+const heardTime = () => (source ? Math.max(offset, currentTime() - latency()) : offset);
 
 function play() {
   if (!buffer) return;
@@ -229,7 +234,7 @@ function play() {
 }
 function pause() {
   if (!source) return;
-  offset = currentTime();
+  offset = heardTime(); // carry on from what was heard
   const s = source;
   source = null;
   s.stop();
@@ -318,7 +323,7 @@ async function load_(s, at, autoplay, counted = false) {
     buffer.copyToChannel(samples, 0);
     offset = previous > 0 ? Math.min(at * info.duration / previous, info.duration) : 0;
     buildOvers();
-    if (DEBUG) setStatus(`Seed ${info.seed} · rendered in ${(info.renderMillis / 1000).toFixed(2)} s`);
+    if (DEBUG) setStatus(`Seed ${info.seed} · rendered in ${(info.renderMillis / 1000).toFixed(2)} s · output latency ${Math.round(latency() * 1000)} ms`);
     if (counted) trackRender(info.renderMillis);
     if (autoplay) play();
   } catch (error) {
@@ -334,18 +339,18 @@ async function load_(s, at, autoplay, counted = false) {
 async function rerender() {
   if (!qso) return;
   const wasPlaying = isPlaying();
-  const at = currentTime();
+  const at = heardTime();
   pause();
   await load_(seed, at, wasPlaying);
 }
 
 function previousOver() {
-  const now = currentTime();
+  const now = heardTime();
   const target = [...qso.overs].reverse().find((o) => o.start < now - 1.5)?.start ?? 0;
   seek(Math.max(0, target - 0.3));
 }
 function nextOver() {
-  const now = currentTime();
+  const now = heardTime();
   const next = qso.overs.find((o) => o.start > now + 0.1);
   if (next) seek(Math.max(0, next.start - 0.3));
 }
@@ -508,7 +513,7 @@ function speedText() {
 }
 
 function update() {
-  const t = currentTime();
+  const t = heardTime();
   const has = !!qso;
   $('playIcon').setAttribute('d', isPlaying() ? PAUSE : PLAY);
   $('play').title = isPlaying() ? 'Pause' : 'Play';

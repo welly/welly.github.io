@@ -240,17 +240,63 @@ let qso;        // info from the engine: stations, overs, summary…
 let seed;
 let busy = false;
 
+// MARK: Usage counts (GoatCounter, anonymous, no cookies, nothing stored on the device)
+
+// Sent straight to GoatCounter's counting address rather than through its count.js, which always adds the page's
+// ?… part, and that can hold a callsign, name and QTH. Only the fields below are sent. Not counted on localhost or
+// with ?debug (which logs instead); visit the page with #nocount once to stop counting your own visits.
+const COUNTER = 'https://g3ajm.goatcounter.com/count';
+const counting = (() => {
+  try {
+    if (location.hash === '#nocount') localStorage.setItem('mockqso.nocount', '1');
+    if (location.hash === '#count') localStorage.removeItem('mockqso.nocount');
+    if (localStorage.getItem('mockqso.nocount') === '1') return false;
+  } catch { }
+  return !/^(localhost|127\.|\[::1\])/.test(location.hostname) && location.protocol === 'https:';
+})();
+function count(fields) {
+  const q = new URLSearchParams({ ...fields, s: String(screen.width), rnd: Math.random().toString(36).slice(2) });
+  if (DEBUG) { (window.mockqsoCounts ??= []).push(Object.fromEntries(q)); console.info('count', Object.fromEntries(q)); return; }
+  if (!counting) return;
+  try { fetch(`${COUNTER}?${q}`, { mode: 'no-cors', credentials: 'omit', keepalive: true, referrerPolicy: 'no-referrer' }); } catch { }
+}
+/// A visit: the page's path and title, and where the visitor came from if it was another site.
+function countVisit() {
+  let from = '';
+  try { if (document.referrer && new URL(document.referrer).origin !== location.origin) from = new URL(document.referrer).origin; } catch { }
+  count({ p: location.pathname, t: 'Mock QSO', ...(from ? { r: from } : {}) });
+}
+/// Counts an event, e.g. "qso/pota". Only these fixed labels are sent: never a callsign, name, QTH or seed.
+function track(event) {
+  count({ p: `mockqso/${event}`, t: event, e: 'true' });
+}
+const device = () => (matchMedia('(pointer: coarse)').matches ? 'touch' : 'mouse');
+function trackNewQSO() {
+  const band = Math.floor(settings.wpm / 5) * 5;
+  track(`qso/${settings.kind ?? 'any'}`);
+  track(`speed/${band}-${band + 4} wpm${settings.farnsworth ? ' farnsworth' : ''}`);
+  const on = [settings.sending !== 'computer' && 'fists', settings.noise !== 'off' && `noise ${settings.noise}`,
+    settings.qrn && 'qrn', settings.qrm && 'qrm', settings.qsb && 'qsb'].filter(Boolean);
+  track(`conditions/${on.length ? on.join(' + ') : 'clean'}`);
+  track(`text/${revealMode}`);
+}
+function trackRender(millis) {
+  const bucket = millis < 1000 ? 'under 1 s' : millis < 3000 ? '1-3 s' : 'over 3 s';
+  track(`render/${device()}/${bucket}`);
+}
+
 async function newQSO() {
   ensureAudio(); // inside the tap, so playback can start once the QSO is ready
   pause();
   seed = randomSeed();
   made = { generator: generatorSettings(), date: Date.now() };
   if (shared) { shared = false; writeAddress(); }
-  await load_(seed, 0, true);
+  trackNewQSO();
+  await load_(seed, 0, true, true);
 }
 
 /// Renders `seed` with the current settings and loads it, at `at` seconds (scaled if the length changed).
-async function load_(s, at, autoplay) {
+async function load_(s, at, autoplay, counted = false) {
   busy = true;
   setStatus('');
   update();
@@ -265,9 +311,11 @@ async function load_(s, at, autoplay) {
     offset = previous > 0 ? Math.min(at * info.duration / previous, info.duration) : 0;
     buildOvers();
     if (DEBUG) setStatus(`Seed ${info.seed} · rendered in ${(info.renderMillis / 1000).toFixed(2)} s`);
+    if (counted) trackRender(info.renderMillis);
     if (autoplay) play();
   } catch (error) {
     setStatus(`Couldn't make a QSO: ${error.message}`);
+    track('error/render');
   } finally {
     busy = false;
     update();
@@ -639,8 +687,8 @@ async function shareLink(url, what) {
   }
 }
 $('shareButton').addEventListener('click', () => showShareMenu($('shareMenu').hidden));
-$('shareSettings').addEventListener('click', () => shareLink(settingsLink(), 'these settings'));
-$('shareQSO').addEventListener('click', () => shareLink(qsoLink(), 'this QSO'));
+$('shareSettings').addEventListener('click', () => { track('share/settings'); shareLink(settingsLink(), 'these settings'); });
+$('shareQSO').addEventListener('click', () => { track('share/qso'); shareLink(qsoLink(), 'this QSO'); });
 document.addEventListener('click', (e) => {
   if (!$('shareMenu').hidden && !e.target.closest('.share-wrap')) showShareMenu(false);
 });
@@ -650,9 +698,11 @@ document.addEventListener('keydown', (e) => {
 
 update();
 requestAnimationFrame(tick);
+countVisit();
 
 // Opened from a QSO link: make that exact QSO, ready to play (sound has to wait for a tap).
 if (sharedQSO) {
+  track('opened/shared qso');
   seed = sharedQSO.seed;
   made = { generator: sharedQSO.generator, date: sharedQSO.date };
   shared = true;

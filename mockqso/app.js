@@ -159,6 +159,12 @@ writeAddress();
 // same stamp, so after an update a browser never mixes new files with cached old ones.
 const VERSION = new URL(import.meta.url).search;
 const worker = new Worker(new URL(`worker.js${VERSION}`, import.meta.url), { type: 'module' });
+
+// Offline: a published copy (stamped with a version) keeps itself in a service worker's cache. Not while
+// working on the page locally (unstamped), so edits always show.
+if (VERSION && 'serviceWorker' in navigator && !new URLSearchParams(location.search).has('debug')) {
+  navigator.serviceWorker.register(new URL('sw.js', import.meta.url), { scope: './' }).catch(() => { });
+}
 let nextRequest = 0;
 const pending = new Map();
 worker.onmessage = ({ data }) => {

@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mock QSO · CW contacts to copy</title>
+<meta name="description" content="Copying practice with realistic CW QSOs: ragchews, POTA and SOTA activations, pile-ups and contests, sent by operators with their own speed and fist. Free, in your browser.">
+<meta property="og:title" content="Mock QSO">
+<meta property="og:description" content="Copying practice with realistic CW QSOs, in your browser.">
+<meta name="theme-color" content="#eef1f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1020" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  :root {
+    --bg: #eef1f7; --surface: rgba(255, 255, 255, 0.86); --solid: #ffffff; --surface-2: #f1f3f8; --text: #141925; --muted: #5d6576;
+    --faint: #6b7383; --ahead: #8a91a0; --line: rgba(20, 30, 60, 0.09); --accent: #1f5bc0; --accent-ink: #ffffff;
+    --btn-1: #2a68d4; --btn-2: #1f5bc0;
+    --amber: #e6a823; --amber-soft: #fff1cc; --soft: rgba(31, 91, 192, 0.08);
+    --glow-1: rgba(47, 116, 224, 0.20); --glow-2: rgba(244, 201, 93, 0.28);
+    --shadow: 0 1px 2px rgba(20, 30, 60, 0.05), 0 18px 50px rgba(20, 30, 60, 0.12);
+    --s0: #1f5bc0; --s1: #a85800; --s2: #1a7a33; --s3: #c2185b; --s4: #7b3fbf; --s5: #007480; --s6: #8d5a2b; --s7: #3f51b5;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b1020; --surface: rgba(22, 29, 46, 0.86); --solid: #161d2e; --surface-2: #1e2639; --text: #eef1f7; --muted: #a3abbd;
+      --faint: #858ea4; --ahead: #6c7590; --line: rgba(255, 255, 255, 0.08); --accent: #5b9bff; --accent-ink: #ffffff;
+      --btn-1: #2f6fdc; --btn-2: #2559b8;
+      --amber: #f4c95d; --amber-soft: #3b3220; --soft: rgba(91, 155, 255, 0.11);
+      --glow-1: rgba(61, 127, 232, 0.28); --glow-2: rgba(244, 201, 93, 0.10);
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 24px 60px rgba(0, 0, 0, 0.5);
+      --s0: #5b9bff; --s1: #ffa24a; --s2: #4cc76a; --s3: #ff6b9a; --s4: #b58cff; --s5: #3ccbd6; --s6: #d19a66; --s7: #8c9eff;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; color: var(--text); background-color: var(--bg);
+    background-image: radial-gradient(900px 520px at 8% -8%, var(--glow-1), transparent 70%),
+      radial-gradient(760px 480px at 100% 0%, var(--glow-2), transparent 70%);
+    background-repeat: no-repeat; background-attachment: fixed;
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
+  }
+  button, select, input { font: inherit; color: inherit; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+  kbd { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .85em; background: var(--surface-2);
+    border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
+
+  /* Slim top bar */
+  nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 60px;
+    padding-top: env(safe-area-inset-top); box-sizing: content-box; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--text); font-size: 17px; letter-spacing: -0.01em; }
+  .brand:hover { text-decoration: none; }
+  .brand img { width: 28px; height: 28px; border-radius: 7px; box-shadow: 0 2px 8px rgba(20, 50, 120, 0.25); }
+  nav .links { display: flex; gap: 18px; font-size: 15px; }
+  nav .links a { color: var(--muted); }
+
+  .intro { margin: 4px 2px 28px; color: var(--muted); font-size: 15px; }
+  .intro strong { color: var(--text); font-weight: 600; }
+  .about strong { color: var(--text); font-weight: 600; }
+
+  /* The player fills most of the window */
+  .player { display: flex; flex-direction: column; height: max(520px, calc(100svh - 170px - env(safe-area-inset-top)));
+    background: var(--surface); -webkit-backdrop-filter: saturate(1.4) blur(18px); backdrop-filter: saturate(1.4) blur(18px);
+    border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); overflow: hidden; }
+  .player-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--line); flex: none; }
+  .top { display: flex; gap: 8px; align-items: center; }
+  .sr-only, .top label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .over:focus-visible { outline-offset: -2px; }
+  .select-wrap { position: relative; flex: 1 1 auto; max-width: 340px; min-width: 0; }
+  .select-wrap::after { content: ""; position: absolute; right: 12px; top: 50%; width: 7px; height: 7px; margin-top: -5px;
+    border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); pointer-events: none; }
+  #kind { width: 100%; appearance: none; -webkit-appearance: none; font-weight: 650; font-size: 16px; padding: 9px 34px 9px 12px;
+    border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); cursor: pointer; }
+  .spacer { flex: 1; }
+  .btn { padding: 9px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--solid); cursor: pointer; }
+  .btn.primary { background: linear-gradient(180deg, var(--btn-1), var(--btn-2)); border-color: transparent; color: var(--accent-ink);
+    font-weight: 650; box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }
+  .btn.primary:active { transform: translateY(1px); }
+  .btn:disabled { opacity: 0.55; cursor: default; }
+  #new { white-space: nowrap; flex: none; }
+  .meta { color: var(--muted); font-size: 14px; margin: 10px 2px 0; }
+
+  .btn.square { display: inline-grid; place-items: center; padding: 0; width: 40px; height: 40px; flex: none; }
+  .btn.square svg { width: 19px; height: 19px; fill: var(--accent); }
+  #shareButton[aria-expanded="true"] { background: var(--soft); }
+  #settingsButton { display: inline-flex; align-items: center; gap: 7px; flex: none; font-weight: 600; color: var(--text); }
+  #settingsButton svg { width: 18px; height: 18px; fill: var(--accent); }
+  #settingsButton[aria-expanded="true"] { background: var(--soft); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+  /* Settings open over the over list, with the transport still below */
+  .settings { position: absolute; inset: 0; z-index: 4; overflow-y: auto; overscroll-behavior: contain;
+    background: var(--solid); padding: 16px 22px 24px; }
+  .settings[hidden] { display: none; }
+  .settings-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .settings-head h2 { font-size: 17px; margin: 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px 40px; padding: 8px 0 4px; }
+  .grid fieldset { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 6px; align-content: start; }
+  .grid .column { display: grid; gap: 20px; align-content: start; }
+  .grid legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 650; text-transform: uppercase;
+    letter-spacing: 0.08em; color: var(--muted); }
+  .grid label { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; font-size: 15px; min-height: 38px; }
+  .grid label[hidden] { display: none; }
+  .grid label.sub { padding-left: 14px; }
+  .grid label:has(:disabled) { color: var(--faint); }
+  .grid select, .grid input[type=number], .grid input[type=text] {
+    width: 10rem; height: 36px; font-size: 16px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--line);
+    background: var(--surface-2); }
+  .grid input[type=number] { width: 5.5rem; justify-self: end; }
+  .grid input[type=text] { text-transform: uppercase; }
+  .grid input::placeholder { text-transform: none; color: var(--faint); }
+  .grid :disabled { opacity: 0.5; }
+  .grid input[type=checkbox] { justify-self: end; accent-color: var(--accent); width: 20px; height: 20px; margin: 0 2px; }
+  .note { color: var(--muted); font-size: 13px; margin: 18px 0 0; }
+
+  /* Overs: call, then what was sent, as in the apps */
+  .list-area { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  #loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    background: color-mix(in srgb, var(--solid) 75%, transparent); color: var(--muted); font-size: 15px;
+    animation: fade-in .2s ease .15s both; }
+  @keyframes fade-in { from { opacity: 0; } }
+  .spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent);
+    animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
+  #scroller { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 0 10px; }
+  #overs { padding: 12px 0 24px; display: flex; flex-direction: column; gap: 4px; }
+  .list-hint { color: var(--faint); font-size: 14px; text-align: center; padding: 28px 16px; margin: 0; }
+  .list-hint[hidden] { display: none; }
+  .empty { color: var(--muted); text-align: center; padding: 64px 16px; margin: 0; }
+  .empty .bubble { display: block; margin: 0 auto 16px; width: 76px; height: 76px; border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(20, 60, 140, 0.28); }
+  .over { display: flex; gap: 12px; padding: 8px 10px; border-radius: 10px; cursor: pointer; align-items: baseline; }
+  .over:hover { background: var(--soft); }
+  .over.unheard { opacity: 0.35; }
+  .over[hidden], .stations[hidden], #loading[hidden], .intro-short { display: none; }
+  .call { font: 600 15px ui-monospace, "SF Mono", Menlo, monospace; min-width: 84px; }
+  .text { font: 16px/1.5 ui-monospace, "SF Mono", Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; flex: 1; }
+  .text .ps { text-decoration: overline; }
+  .text .ahead { color: var(--ahead); }
+  .text .now { border-radius: 3px; color: var(--text); }
+  .hint { color: var(--faint); font: 15px -apple-system, BlinkMacSystemFont, sans-serif; }
+  .sending { color: var(--muted); font: 15px -apple-system, BlinkMacSystemFont, sans-serif; animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.4; } }
+  @media (prefers-reduced-motion: reduce) { .sending { animation: none; } }
+  .stations { margin-top: 10px; padding: 14px 16px; border-radius: 16px; background: var(--surface-2); font-size: 14px; }
+  .stations h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 8px; }
+  .stations div { display: flex; gap: 12px; align-items: baseline; color: var(--muted); padding: 2px 0; }
+  .stations .call { font: 700 14px ui-monospace, "SF Mono", Menlo, monospace; min-width: 80px; }
+
+  /* Transport */
+  .player-foot { position: relative; flex: none; border-top: 1px solid var(--line); padding: 6px 14px max(10px, env(safe-area-inset-bottom));
+    background: color-mix(in srgb, var(--solid) 70%, transparent); }
+  .scrub { display: flex; align-items: center; gap: 10px; font: 12px ui-monospace, Menlo, monospace; color: var(--muted);
+    padding-top: 8px; font-variant-numeric: tabular-nums; }
+  #position { flex: 1; min-width: 0; accent-color: var(--accent); }
+  .transport { display: grid; grid-template-columns: 1fr auto 1fr; grid-template-areas: "left controls right"; align-items: center; padding-top: 2px; }
+  .side { display: flex; gap: 4px; align-items: center; }
+  .side.left { grid-area: left; }
+  .side.right { grid-area: right; justify-content: flex-end; }
+  .controls { grid-area: controls; display: flex; align-items: center; gap: 2px; }
+  .share-wrap { position: relative; }
+  .share-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 5; width: 290px; padding: 6px;
+    background: var(--solid); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
+  .share-menu[hidden] { display: none; }
+  .share-menu button { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 10px;
+    padding: 9px 12px; font-size: 15px; font-weight: 600; cursor: pointer; color: var(--text); }
+  .share-menu button:hover, .share-menu button:focus-visible { background: var(--soft); }
+  .share-menu button[hidden] { display: none; }
+  .share-menu small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 1px; }
+  .toast { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 6; padding: 8px 14px;
+    border-radius: 99px; background: var(--text); color: var(--bg); font-size: 14px; font-weight: 600; white-space: nowrap;
+    box-shadow: var(--shadow); }
+  .toast[hidden] { display: none; }
+  .icon { background: none; border: none; cursor: pointer; padding: 10px; border-radius: 12px; line-height: 0; color: var(--accent); }
+  .icon:hover:not(:disabled) { background: var(--soft); }
+  .icon:disabled { opacity: 0.3; cursor: default; }
+  .icon svg { width: 24px; height: 24px; fill: currentColor; }
+  #play { padding: 4px; border-radius: 50%; }
+  #play:hover { background: none; }
+  #play svg { width: 58px; height: 58px; filter: drop-shadow(0 6px 14px color-mix(in srgb, var(--accent) 40%, transparent)); }
+  #play:active svg { transform: scale(0.96); }
+  .pill { display: inline-flex; align-items: center; gap: 6px; font: 650 13px -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: 99px; padding: 7px 12px;
+    white-space: nowrap; cursor: pointer; min-height: 40px; }
+  .pill:hover { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+  .pill svg { width: 16px; height: 16px; fill: currentColor; color: var(--accent); flex: none; }
+  #speed::after { content: ""; width: 6px; height: 6px; margin: -3px 1px 0 2px; border-right: 2px solid var(--muted);
+    border-bottom: 2px solid var(--muted); transform: rotate(45deg); }
+  /* All three labels share one cell, so the button is always as wide as the longest and doesn't move under the pointer */
+  .reveal-labels { display: grid; }
+  .reveal-labels > span { grid-area: 1 / 1; visibility: hidden; text-align: left; }
+  .reveal-labels > span.on { visibility: visible; }
+  #status { color: var(--faint); font-size: 12px; text-align: center; padding-top: 2px; }
+  #status:empty { display: none; }
+
+  /* About, below the player */
+  .about { padding: 56px 0 0; }
+  .cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
+  .about h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 10px; }
+  .about p, .about li { font-size: 15px; color: var(--muted); margin: 0 0 10px; }
+  .about ul { margin: 0; padding-left: 18px; }
+  footer.site { margin-top: 40px; padding: 20px 0 max(32px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line);
+    color: var(--faint); font-size: 13px; text-align: center; }
+
+  @media (max-width: 980px) { .cols { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 640px) { .cols { grid-template-columns: 1fr; gap: 8px; } }
+  @media (max-width: 560px) {
+    .wrap.app { padding: 0 8px; }
+    nav { padding-left: 8px; padding-right: 8px; height: 52px; }
+    .intro { margin: 0 8px 14px; font-size: 14px; }
+    .intro-long { display: none; }
+    .intro-short { display: inline; }
+    .player { border-radius: 18px; height: max(440px, calc(100svh - 126px - env(safe-area-inset-top))); }
+    /* With Settings open the page scrolls instead of squeezing the over list */
+    #settingsButton .label { display: none; } /* gear only on a phone */
+    #settingsButton { padding: 9px 11px; }
+    .settings { padding: 14px 16px 20px; }
+    /* The kind menu gets its own line; Share, Settings and New QSO sit under it */
+    .top { flex-wrap: wrap; row-gap: 8px; }
+    .select-wrap { flex: 1 1 100%; max-width: none; }
+    /* Phone: Speed and Text on a row of their own, the transport buttons centred below */
+    .transport { grid-template-columns: auto 1fr; grid-template-areas: "left right" "controls controls"; row-gap: 2px; padding-top: 8px; }
+    .controls { justify-self: center; }
+    /* The menu sits above the player's controls, right-aligned, so it stays on screen */
+    /* The menu spans the player under the top row, so it stays on screen */
+    .player-head { position: relative; }
+    .share-wrap { position: static; }
+    .share-menu { left: 12px; right: 12px; top: 112px; width: auto; }
+    #scroller { padding: 0 4px; }
+    .call { min-width: 72px; font-size: 14px; }
+    .text { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap app">
+  <nav>
+    <a class="brand" href="#"><img src="icon.png" alt="" width="28" height="28">Mock QSO</a>
+    <div class="links"><a href="#help">Help</a><a href="https://g3ajm.radio/">G3AJM</a></div>
+  </nav>
+  <p class="intro"><span class="intro-short">Realistic CW QSOs for copying practice. Choose a kind, press <strong>New QSO</strong> and copy what you hear. <a href="#help">Help</a></span><span class="intro-long">Copying practice with realistic CW QSOs: ragchews, activations, pile-ups and contests, a new one each time, sent by operators with their own speed and fist. Choose a kind of QSO, press <strong>New QSO</strong> and copy what you hear. <a href="#help">How to use it</a></span></p>
+  <!-- The player: app.js looks these elements up by id. -->
+  <section class="player" id="listen" aria-label="Player">
+    <div class="player-head">
+      <div class="top">
+        <label for="kind">Kind of QSO</label>
+        <span class="select-wrap"><select id="kind"></select></span>
+        <span class="spacer"></span>
+        <div class="share-wrap">
+          <button class="btn square" id="shareButton" title="Share" aria-label="Share" aria-haspopup="menu" aria-expanded="false" aria-controls="shareMenu">
+            <svg viewBox="0 0 24 24"><path d="M12 2.6l4.7 4.7-1.4 1.4L13 6.4V15h-2V6.4L8.7 8.7 7.3 7.3zM5 11h3v2H6v7h12v-7h-2v-2h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/></svg></button>
+          <div class="share-menu" id="shareMenu" role="menu" hidden>
+            <button role="menuitem" id="shareSettings">Copy link to these settings<small>Kind, speed and band. Bookmark it or send it.</small></button>
+            <button role="menuitem" id="shareQSO">Copy link to this QSO<small>The exact contact, for someone else to copy.</small></button>
+          </div>
+        </div>
+        <button class="btn" id="settingsButton" aria-expanded="false" aria-controls="settingsPanel" title="Settings">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.4-2.9a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg><span class="label">Settings</span></button>
+        <button class="btn primary" id="new">New QSO</button>
+      </div>
+      <p class="meta"><span id="summary"></span></p>
+    </div>
+
+    <div class="list-area">
+      <div class="settings" id="settingsPanel" role="region" aria-labelledby="settingsTitle" hidden>
+        <div class="settings-head">
+          <h2 id="settingsTitle">Settings</h2>
+          <button class="btn primary" id="settingsDone" type="button">Done</button>
+        </div>
+        <div class="grid">
+          <div class="column">
+            <fieldset>
+              <legend>Speed</legend>
+              <label>Speed (WPM) <input type="number" id="wpm" min="5" max="50" step="1"></label>
+              <label>Farnsworth spacing <input type="checkbox" id="farnsworth"></label>
+              <label class="sub">Overall speed (WPM) <input type="number" id="effectiveWPM" min="3" max="49" step="1"></label>
+            </fieldset>
+            <fieldset>
+              <legend>QSOs</legend>
+              <label>Operators <select id="sending">
+                <option value="mixed">Mixed (realistic)</option><option value="computer">Computer</option>
+                <option value="expert">Expert</option><option value="good">Good</option>
+                <option value="average">Average</option><option value="beginner">Beginner</option></select></label>
+              <label id="contactsRow">Contacts in a run <input type="number" id="contacts" min="1" max="20" step="1"></label>
+            </fieldset>
+          </div>
+          <fieldset>
+            <legend>Band</legend>
+            <label>Noise <select id="noise"><option value="off">Off</option><option value="low">Low</option>
+              <option value="medium">Medium</option><option value="high">High</option></select></label>
+            <label>Static (QRN) <input type="checkbox" id="qrn"></label>
+            <label>Other stations (QRM) <input type="checkbox" id="qrm"></label>
+            <label>Fading (QSB) <input type="checkbox" id="qsb"></label>
+            <label>Tone (Hz) <input type="number" id="tone" min="300" max="1000" step="10"></label>
+          </fieldset>
+          <fieldset>
+            <legend>You</legend>
+            <label>Your callsign <input type="text" id="myCall" autocapitalize="characters" autocomplete="off" spellcheck="false"></label>
+            <label class="sub">Your name <input type="text" id="myName" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Made up if blank" maxlength="12"></label>
+            <label class="sub">Your QTH <input type="text" id="myQTH" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Made up if blank" maxlength="20"></label>
+            <label>Put my call in QSOs <select id="includeMe"><option value="never">Never</option>
+              <option value="sometimes">Sometimes</option><option value="always">Always</option></select></label>
+          </fieldset>
+        </div>
+        <p class="note">Speed, noise, fading and tone change the QSO you’re hearing; the rest apply to the next one.</p>
+      </div>
+      <div id="scroller"><div id="overs"></div></div>
+      <div id="loading" hidden><span class="spinner"></span>Making a QSO…</div>
+    </div>
+
+    <div class="player-foot">
+      <div class="scrub">
+        <span id="now">0:00</span>
+        <input type="range" id="position" min="0" max="1" step="0.01" value="0" disabled aria-label="Position">
+        <span id="total">0:00</span>
+      </div>
+      <div class="transport">
+        <div class="side left">
+          <button class="pill" id="speed" title="Speed settings" aria-label="Speed settings">20 WPM</button>
+        </div>
+        <div class="controls">
+          <button class="icon" id="replay" title="Replay from the start" aria-label="Replay" disabled>
+            <svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg></button>
+          <button class="icon" id="prev" title="Previous over" aria-label="Previous over" disabled>
+            <svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+          <button class="icon" id="play" title="Play" aria-label="Play">
+            <svg viewBox="0 0 24 24"><path id="playIcon" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-2 14.5v-9l6 4.5z"/></svg></button>
+          <button class="icon" id="next" title="Next over" aria-label="Next over" disabled>
+            <svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+        </div>
+        <div class="side right">
+          <button class="pill" id="reveal" aria-label="Show the text">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path id="revealIcon" d=""/></svg><span class="reveal-labels" id="revealLabel" aria-hidden="true"><span data-mode="always">Text: Always</span><span data-mode="afterEachOver">Text: After each over</span><span data-mode="hidden">Text: Off</span></span></button>
+        </div>
+      </div>
+      <div id="status" aria-live="polite"></div>
+      <div class="toast" id="toast" role="status" hidden></div>
+    </div>
+  </section>
+</div>
+
+<section class="about" id="help">
+  <div class="wrap">
+    <div class="cols">
+      <div>
+        <h2>The player</h2>
+        <ul>
+          <li><strong>New QSO</strong> makes a contact of the kind chosen and plays it. <em>Any</em> picks a different kind each time.</li>
+          <li>Play and pause with the big button. The buttons beside it go back to the start and step from over to over; tap an over to hear it from there.</li>
+          <li>The <strong>Text</strong> button sets when the text is shown: <em>Always</em> (each character lights up as it's sent), <em>After each over</em>, or <em>Off</em>.</li>
+          <li>The speed button opens Settings.</li>
+          <li><strong>Share</strong> copies a link to your settings, to bookmark or send, or to the QSO you're hearing, so someone else can copy exactly the same contact.</li>
+          <li>Keys: <kbd>Space</kbd> play or pause, <kbd>←</kbd> <kbd>→</kbd> previous or next over, <kbd>T</kbd> when to show the text.</li>
+        </ul>
+      </div>
+      <div>
+        <h2>Settings</h2>
+        <ul>
+          <li><strong>Farnsworth spacing</strong> sends each character at your Speed but leaves longer gaps between them, so the overall rate is the Overall speed. A good way to copy faster characters before you can keep up with them.</li>
+          <li><strong>Static (QRN)</strong> adds crashes from lightning, <strong>Other stations (QRM)</strong> puts other signals and tuning nearby, and <strong>Fading (QSB)</strong> makes signals rise and fall.</li>
+          <li><strong>Operators</strong> sets how well the stations send; <em>Mixed</em> is like the real bands.</li>
+        </ul>
+      </div>
+      <div>
+        <h2>Practising</h2>
+        <ul>
+          <li>Hide the text and copy on paper or in your head: calls, names, reports, QTHs.</li>
+          <li>Don't stop on a missed letter; pick up the next word.</li>
+          <li>Start a few WPM below your comfortable speed, or turn on Farnsworth spacing for more time between characters.</li>
+          <li>Speed, noise, fading and tone change the QSO you're listening to, so you can go back over it.</li>
+        </ul>
+      </div>
+      <div>
+        <h2>About</h2>
+        <p>Each QSO is generated when you ask for one, so no two are the same. Callsigns follow real formats, but the stations, names and QTHs are fictional.</p>
+        <p>It all runs in your browser; nothing is sent anywhere, and settings are kept on this device. A long ragchew takes a second or so to make.</p>
+        <p>No sound on an iPhone? Check the volume.</p>
+      </div>
+    </div>
+    <footer class="site">Mock QSO · <a href="https://g3ajm.radio/">G3AJM</a> · 73</footer>
+  </div>
+</section>
+
+<script type="module" src="app.js?v=78741c1"></script>
+</body>
+</html>

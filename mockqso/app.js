@@ -30,10 +30,10 @@ const SUMMARIES = {
 const DEFAULTS = {
   kind: 'ragchew', myCall: '', myName: '', myQTH: '', includeMe: 'sometimes', wpm: 20, farnsworth: false, effectiveWPM: 12,
   sending: 'computer', tone: 650, noise: 'off', qrn: false, qrm: false, qsb: false, contacts: 5,
-  sameTone: false, callersOverlap: false,
+  sameTone: false,
 };
 /// Settings that change the QSO being heard (re-rendered with the same seed); the rest apply to the next.
-const RECEIVER = ['wpm', 'farnsworth', 'effectiveWPM', 'tone', 'sameTone', 'callersOverlap', 'noise', 'qrn', 'qrm', 'qsb'];
+const RECEIVER = ['wpm', 'farnsworth', 'effectiveWPM', 'tone', 'sameTone', 'noise', 'qrn', 'qrm', 'qsb'];
 
 function load(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
@@ -65,8 +65,8 @@ const KIND_VALUES = KINDS.flatMap(([, kinds]) => kinds.map(([value]) => value));
 const TEXT_PARAMS = { always: 'always', afterEachOver: 'after', hidden: 'off' };
 const NUMBERS = { wpm: ['wpm', 5, 50], tone: ['tone', 300, 1000], contacts: ['n', 1, 20] };
 const CHOICES = { sending: ['ops', ['mixed', 'computer', 'expert', 'good', 'average', 'beginner']], noise: ['noise', ['off', 'low', 'medium', 'high']] };
-const SWITCHES = { qrn: 'qrn', qrm: 'qrm', qsb: 'qsb', sameTone: 'onetone', callersOverlap: 'together' };
-const ADDRESS_KEYS = ['kind', 'wpm', 'fw', 'tone', 'n', 'ops', 'noise', 'qrn', 'qrm', 'qsb', 'onetone', 'together', 'text', 'qso'];
+const SWITCHES = { qrn: 'qrn', qrm: 'qrm', qsb: 'qsb', sameTone: 'onetone' };
+const ADDRESS_KEYS = ['kind', 'wpm', 'fw', 'tone', 'n', 'ops', 'noise', 'qrn', 'qrm', 'qsb', 'onetone', 'text', 'qso'];
 let sharedQSO = null; // { seed, date, generator } from a QSO link, loaded once the page is ready
 
 function readAddress() {
@@ -289,8 +289,7 @@ function trackNewQSO() {
   track(`qso/${settings.kind ?? 'any'}`);
   track(`speed/${band}-${band + 4} wpm${settings.farnsworth ? ' farnsworth' : ''}`);
   const on = [settings.sending !== 'computer' && 'fists', settings.noise !== 'off' && `noise ${settings.noise}`,
-    settings.qrn && 'qrn', settings.qrm && 'qrm', settings.qsb && 'qsb',
-    settings.callersOverlap && 'callers at once'].filter(Boolean);
+    settings.qrn && 'qrn', settings.qrm && 'qrm', settings.qsb && 'qsb'].filter(Boolean);
   track(`conditions/${on.length ? on.join(' + ') : 'clean'}`);
   track(`text/${revealMode}`);
 }
@@ -531,7 +530,6 @@ function update() {
   $('effectiveWPM').disabled = !settings.farnsworth;
   $('myName').disabled = $('myQTH').disabled = !settings.myCall; // only used for your own station
   $('contactsRow').hidden = ['ragchew', 'shortQSO'].includes(settings.kind);
-  $('overlapRow').hidden = $('contactsRow').hidden;
   $('now').textContent = fmt(scrubbing ? Number($('position').value) : t);
   $('total').textContent = fmt(duration());
   $('revealIcon').setAttribute('d', REVEAL_ICONS[revealMode]);
@@ -550,8 +548,7 @@ function update() {
   } else {
     $('summary').textContent = `${settings.kind ? SUMMARIES[settings.kind] : 'A different kind of QSO each time.'} Press New QSO to start.`;
     // The welcome says whether QSOs will be clean or realistic, and where to change it.
-    const clean = settings.sending === 'computer' && settings.noise === 'off' && !settings.qrn && !settings.qrm && !settings.qsb
-      && !settings.callersOverlap;
+    const clean = settings.sending === 'computer' && settings.noise === 'off' && !settings.qrn && !settings.qrm && !settings.qsb;
     const welcome = clean ? 'clean' : realism();
     if ($('overs').dataset.welcome !== welcome) {
       $('overs').dataset.welcome = welcome;
@@ -576,7 +573,6 @@ function realism() {
   if (settings.qrn) on.push('static');
   if (settings.qrm) on.push('other stations');
   if (settings.qsb) on.push('fading');
-  if (settings.callersOverlap) on.push('callers calling at once');
   const list = on.length > 1 ? `${on.slice(0, -1).join(', ')} and ${on.at(-1)}` : on[0];
   return `${list[0].toUpperCase()}${list.slice(1)} ${on.length > 1 ? 'are' : 'is'} on`;
 }

@@ -26,9 +26,10 @@ const SUMMARIES = {
   sst: 'Friendly and slow (20 WPM and under). Exchange: name and state, province or country.',
   mst: 'Medium speed. Exchange: name and serial number.', rsgb80: 'Exchange: 5NN and serial number.',
 };
+/// A gentle start: clean computer sending with no band noise. Real fists and band conditions are in Settings.
 const DEFAULTS = {
   kind: 'ragchew', myCall: '', myName: '', myQTH: '', includeMe: 'sometimes', wpm: 20, farnsworth: false, effectiveWPM: 12,
-  sending: 'mixed', tone: 650, noise: 'low', qrn: true, qrm: false, qsb: true, contacts: 5,
+  sending: 'computer', tone: 650, noise: 'off', qrn: false, qrm: false, qsb: false, contacts: 5,
 };
 /// Settings that change the QSO being heard (re-rendered with the same seed); the rest apply to the next.
 const RECEIVER = ['wpm', 'farnsworth', 'effectiveWPM', 'tone', 'noise', 'qrn', 'qrm', 'qsb'];
@@ -315,6 +316,7 @@ function symbolPieces(text) {
 function buildOvers() {
   const list = $('overs');
   list.textContent = '';
+  delete list.dataset.welcome;
   // Shown while no over is on the list yet (text hidden until each over ends).
   hintEl = document.createElement('p');
   hintEl.className = 'list-hint';
@@ -484,11 +486,34 @@ function update() {
     updateOvers(t);
   } else {
     $('summary').textContent = `${settings.kind ? SUMMARIES[settings.kind] : 'A different kind of QSO each time.'} Press New QSO to start.`;
-    if (!$('overs').firstChild) {
-      $('overs').innerHTML = '<p class="empty"><img class="bubble" src="icon.png" alt="">'
-        + 'Choose a kind of QSO and press New QSO.<br>Copy what you hear.</p>';
+    // The welcome says whether QSOs will be clean or realistic, and where to change it.
+    const clean = settings.sending === 'computer' && settings.noise === 'off' && !settings.qrn && !settings.qrm && !settings.qsb;
+    const welcome = clean ? 'clean' : realism();
+    if ($('overs').dataset.welcome !== welcome) {
+      $('overs').dataset.welcome = welcome;
+      $('overs').innerHTML = '<div class="empty"><img class="bubble" src="icon.png" alt="">'
+        + '<p>Choose a kind of QSO and press <strong>New QSO</strong>. Copy what you hear.</p>'
+        + (clean
+          ? '<p class="gentle">To start with, QSOs are sent cleanly by computer, with no band noise. When you’re ready, '
+            + 'try real operators’ fists, static and fading in <button type="button" class="inline-link" data-open-settings>Settings</button>.</p>'
+          : `<p class="gentle">${realism()}. Change them in `
+            + '<button type="button" class="inline-link" data-open-settings>Settings</button>.</p>')
+        + '</div>';
+      $('overs').querySelector('[data-open-settings]').addEventListener('click', () => showSettings(true));
     }
   }
+}
+
+/// What makes the QSOs harder than clean computer sending, e.g. "Real operators' sending, noise and static are on".
+function realism() {
+  const on = [];
+  if (settings.sending !== 'computer') on.push('real operators’ sending');
+  if (settings.noise !== 'off') on.push('noise');
+  if (settings.qrn) on.push('static');
+  if (settings.qrm) on.push('other stations');
+  if (settings.qsb) on.push('fading');
+  const list = on.length > 1 ? `${on.slice(0, -1).join(', ')} and ${on.at(-1)}` : on[0];
+  return `${list[0].toUpperCase()}${list.slice(1)} ${on.length > 1 ? 'are' : 'is'} on`;
 }
 
 function tick() {

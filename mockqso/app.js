@@ -30,9 +30,10 @@ const SUMMARIES = {
 const DEFAULTS = {
   kind: 'ragchew', myCall: '', myName: '', myQTH: '', includeMe: 'sometimes', wpm: 20, farnsworth: false, effectiveWPM: 12,
   sending: 'computer', tone: 650, noise: 'off', qrn: false, qrm: false, qsb: false, contacts: 5,
+  sameTone: false,
 };
 /// Settings that change the QSO being heard (re-rendered with the same seed); the rest apply to the next.
-const RECEIVER = ['wpm', 'farnsworth', 'effectiveWPM', 'tone', 'noise', 'qrn', 'qrm', 'qsb'];
+const RECEIVER = ['wpm', 'farnsworth', 'effectiveWPM', 'tone', 'sameTone', 'noise', 'qrn', 'qrm', 'qsb'];
 
 function load(key, fallback) {
   try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch { return fallback; }
@@ -64,8 +65,8 @@ const KIND_VALUES = KINDS.flatMap(([, kinds]) => kinds.map(([value]) => value));
 const TEXT_PARAMS = { always: 'always', afterEachOver: 'after', hidden: 'off' };
 const NUMBERS = { wpm: ['wpm', 5, 50], tone: ['tone', 300, 1000], contacts: ['n', 1, 20] };
 const CHOICES = { sending: ['ops', ['mixed', 'computer', 'expert', 'good', 'average', 'beginner']], noise: ['noise', ['off', 'low', 'medium', 'high']] };
-const SWITCHES = { qrn: 'qrn', qrm: 'qrm', qsb: 'qsb' };
-const ADDRESS_KEYS = ['kind', 'wpm', 'fw', 'tone', 'n', 'ops', 'noise', 'qrn', 'qrm', 'qsb', 'text', 'qso'];
+const SWITCHES = { qrn: 'qrn', qrm: 'qrm', qsb: 'qsb', sameTone: 'onetone' };
+const ADDRESS_KEYS = ['kind', 'wpm', 'fw', 'tone', 'n', 'ops', 'noise', 'qrn', 'qrm', 'qsb', 'onetone', 'text', 'qso'];
 let sharedQSO = null; // { seed, date, generator } from a QSO link, loaded once the page is ready
 
 function readAddress() {
@@ -178,7 +179,8 @@ function render(seed) {
     pending.set(id, { resolve, reject });
     // `kind: null` is "Any"; the date sets the UTC hour (GM/GA/GE) and year.
     // The QSO's own generator settings and time, so re-rendering it (or a shared link) gives the same contact.
-    const merged = { ...settings, ...made.generator };
+    // All stations on the receiver tone (zero-beat) is the engine's spreadPitch off.
+    const merged = { ...settings, ...made.generator, spreadPitch: !settings.sameTone };
     worker.postMessage({ id, settings: { ...merged, kind: merged.kind || null }, seed: seed.toString(), date: made.date });
   });
 }

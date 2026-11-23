@@ -560,7 +560,7 @@ function update() {
         + (clean
           ? '<p class="gentle">To start with, QSOs are sent cleanly by computer, with no band noise. When you’re ready, '
             + 'try real operators’ fists, static and fading in <button type="button" class="inline-link" data-open-settings>Settings</button>.</p>'
-          : `<p class="gentle">${realism()}. Change them in `
+          : `<p class="gentle">${realism()}. Change ${realism().includes(' are on') ? 'them' : 'it'} in `
             + '<button type="button" class="inline-link" data-open-settings>Settings</button>.</p>')
         + '</div>';
       $('overs').querySelector('[data-open-settings]').addEventListener('click', () => showSettings(true));

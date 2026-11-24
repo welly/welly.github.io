@@ -82,9 +82,11 @@
   .icon-btn:disabled { opacity: 0.35; cursor: default; }
   .done { font-weight: 600; }
 
-  /* Share menu, from the bar */
-  .share-wrap { position: relative; }
-  .share-menu { position: absolute; left: 0; top: calc(100% + 6px); z-index: 20; width: min(300px, calc(100vw - 24px)); padding: 6px;
+  /* Share, beside New QSO: a square button like the kind menu, its menu dropping down below it */
+  .share-wrap { position: relative; flex: none; }
+  .icon-btn.square { min-width: 44px; width: 44px; padding: 0; border: 1px solid var(--line); background: var(--surface-2); }
+  .icon-btn.square svg { width: 22px; height: 22px; }
+  .share-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; width: min(300px, calc(100vw - 24px)); padding: 6px;
     background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); border: 1px solid var(--line); }
   .share-menu button { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 10px;
     padding: 10px 12px; font-size: 16px; font-weight: 600; color: var(--text); }
@@ -233,7 +235,15 @@
     .intro-long { display: none; }
     .intro-short { display: inline; }
     .card { border-radius: 18px; }
-    .player-head { padding: 12px 12px 10px; }
+    .player-head { padding: 12px 12px 10px; position: relative; }
+    /* The share menu spans the card under the top row, so it stays on screen */
+    .share-wrap { position: static; }
+    .share-menu { left: 10px; right: 10px; top: 118px; width: auto; }
+    /* The kind menu on a line of its own; Share and a wide New QSO under it */
+    .top { flex-wrap: wrap; row-gap: 10px; }
+    .select-wrap { flex: 1 1 100%; max-width: none; }
+    .top .spacer { display: none; }
+    #new { flex: 1; }
     #scroller { padding: 0 4px; }
     .call { min-width: 72px; font-size: 14px; }
     .text { font-size: 15px; }
@@ -244,14 +254,7 @@
 </head>
 <body>
 <header class="bar">
-  <div class="share-wrap">
-    <button class="icon-btn" id="shareButton" title="Share" aria-label="Share" aria-haspopup="menu" aria-expanded="false" aria-controls="shareMenu">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M7 11H5.5A1.5 1.5 0 0 0 4 12.5v7A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5H17"/></svg></button>
-    <div class="share-menu" id="shareMenu" role="menu" hidden>
-      <button role="menuitem" id="shareSettings">Copy link to these settings<small>Kind, speed and band. Bookmark it or send it.</small></button>
-      <button role="menuitem" id="shareQSO">Copy link to this QSO<small>The exact contact, for someone else to copy.</small></button>
-    </div>
-  </div>
+  <span style="width:44px" aria-hidden="true"></span>
   <h1><img src="icon.png" alt="" width="22" height="22">Mock QSO</h1>
   <button class="icon-btn" id="settingsButton" aria-label="Settings" title="Settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsPanel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
 </header>
@@ -266,6 +269,14 @@
         <label for="kind" class="sr-only">Kind of QSO</label>
         <span class="select-wrap"><select id="kind"></select></span>
         <span class="spacer"></span>
+        <div class="share-wrap">
+          <button class="icon-btn square" id="shareButton" title="Share" aria-label="Share" aria-haspopup="menu" aria-expanded="false" aria-controls="shareMenu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M7 11H5.5A1.5 1.5 0 0 0 4 12.5v7A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5H17"/></svg></button>
+          <div class="share-menu" id="shareMenu" role="menu" hidden>
+            <button role="menuitem" id="shareSettings">Copy link to these settings<small>Kind, speed and band. Bookmark it or send it.</small></button>
+            <button role="menuitem" id="shareQSO">Copy link to this QSO<small>The exact contact, for someone else to copy.</small></button>
+          </div>
+        </div>
         <button class="btn-primary" id="new">New QSO</button>
       </div>
       <p class="meta"><span id="summary"></span></p>
@@ -367,7 +378,7 @@
           <li>Play and pause with the big button. The buttons beside it step from over to over, and the circular arrow below goes back to the start; tap an over to hear it from there.</li>
           <li>The <strong>Text</strong> button sets when the text is shown: <em>Always</em> (each character lights up as it's sent), <em>After each over</em>, or <em>Off</em>.</li>
           <li><strong>Settings</strong> is the button at the top right; the speed at the bottom right opens it too.</li>
-          <li><strong>Share</strong> (top left) copies a link to your settings, to bookmark or send, or to the QSO you're hearing, so someone else can copy exactly the same contact.</li>
+          <li><strong>Share</strong>, beside New QSO, copies a link to your settings, to bookmark or send, or to the QSO you're hearing, so someone else can copy exactly the same contact.</li>
           <li>Keys: <kbd>Space</kbd> play or pause, <kbd>←</kbd> <kbd>→</kbd> previous or next over, <kbd>T</kbd> when to show the text.</li>
         </ul>
         </div>
@@ -409,6 +420,6 @@
   <footer class="site">Mock QSO · <a href="https://g3ajm.radio/">G3AJM</a> · 73</footer>
 </section>
 
-<script type="module" src="app.js?v=47c1dd3"></script>
+<script type="module" src="app.js?v=8a12193"></script>
 </body>
 </html>

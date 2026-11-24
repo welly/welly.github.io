@@ -413,7 +413,7 @@ function buildOvers() {
     c.textContent = s.call;
     const d = document.createElement('span');
     const town = s.town.toLowerCase().replace(/\b\w/g, (m) => m.toUpperCase());
-    d.textContent = `${s.name}, ${town}, ${s.country}. ${s.skill} operator, ${s.keyType}, ${Math.trunc(s.wpm)} WPM${s.isUser ? ' (you)' : ''}.`;
+    d.textContent = `${s.name}, ${town}, ${s.country}. ${s.sending}, ${Math.trunc(s.wpm)} WPM${s.isUser ? ' (you)' : ''}.`;
     row.append(c, d);
     stationsEl.append(row);
   }

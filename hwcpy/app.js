@@ -32,6 +32,37 @@ if (VERSION && !DEBUG && 'serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => { });
 }
 
+// MARK: Usage counts (GoatCounter, anonymous, no cookies, nothing stored on the device)
+
+// As in Mock QSO: sent straight to GoatCounter's counting address rather than through its count.js, which always
+// adds the page's ?… part. Only the fields below are sent. Not counted on localhost or with ?debug (which logs
+// instead); visit the page with #nocount once to stop counting your own visits (#count to start again).
+const COUNTER = 'https://g3ajm.goatcounter.com/count';
+const counting = (() => {
+  try {
+    if (location.hash === '#nocount') localStorage.setItem('hwcpy.nocount', '1');
+    if (location.hash === '#count') localStorage.removeItem('hwcpy.nocount');
+    if (localStorage.getItem('hwcpy.nocount') === '1') return false;
+  } catch { }
+  return !/^(localhost|127\.|\[::1\])/.test(location.hostname) && location.protocol === 'https:';
+})();
+function count(fields) {
+  const q = new URLSearchParams({ ...fields, s: String(screen.width), rnd: Math.random().toString(36).slice(2) });
+  if (DEBUG) { (window.hwcpyCounts ??= []).push(Object.fromEntries(q)); console.info('count', Object.fromEntries(q)); return; }
+  if (!counting) return;
+  try { fetch(`${COUNTER}?${q}`, { mode: 'no-cors', credentials: 'omit', keepalive: true, referrerPolicy: 'no-referrer' }); } catch { }
+}
+/// A visit: the page's path and title, and where the visitor came from if it was another site.
+function countVisit() {
+  let from = '';
+  try { if (document.referrer && new URL(document.referrer).origin !== location.origin) from = new URL(document.referrer).origin; } catch { }
+  count({ p: location.pathname, t: 'HW CPY', ...(from ? { r: from } : {}) });
+}
+/// Counts an event, e.g. "set/builtin/Words". Only fixed labels are sent: never the text of a set or the name of a file.
+function track(event) {
+  count({ p: `hwcpy/${event}`, t: event, e: 'true' });
+}
+
 const $ = (id) => document.getElementById(id);
 const el = (tag, props = {}, ...children) => {
   const node = document.createElement(tag);
@@ -246,6 +277,7 @@ $('fileInput').addEventListener('change', async () => {
   const key = `file:${id}`;
   if (!store.set(`file.${id}`, text)) toast('This file is too big to keep in the browser; it plays now but won’t be remembered.');
   if (!entry(key)) library.push({ key, name: file.name.replace(/\.txt$/i, ''), source: key, lastUsed: Date.now(), lastItem: 0, count: 0 });
+  track('set/your file');
   saveLibrary();
   await openEntry(key, text);
 });
@@ -265,6 +297,7 @@ async function openBuiltIn(id) {
   const found = findBuiltIn(id);
   if (!found) return;
   const key = `builtin:${id}`;
+  track(`set/builtin/${found.location.split(' › ')[0]}`);
   if (!entry(key)) library.push({ key, name: found.set.name, location: found.location, source: key, lastUsed: Date.now(), lastItem: 0, count: 0 });
   await openEntry(key);
 }
@@ -339,6 +372,7 @@ function closeSet() {
 function showPlayer(show) {
   if (show) { $('library').setAttribute('hidden-narrow', ''); $('player').removeAttribute('hidden-narrow'); }
   else { $('player').setAttribute('hidden-narrow', ''); $('library').removeAttribute('hidden-narrow'); }
+  document.body.classList.toggle('in-player', show); // shows the back arrow in the header on a phone
 }
 $('back').addEventListener('click', () => {
   // Leaving the player pauses it, as in the apps.
@@ -660,6 +694,7 @@ async function loop(token, { singleSend = false, resumeGate = null } = {}) {
       await until(t, token);
       if (token !== run) return;
       sessionEnded = true;
+      track(`session/${sessionMinutes} min finished`);
       next(false);
       pause();
       return;
@@ -712,6 +747,11 @@ function start({ singleSend = false } = {}) {
   const unlocked = unlockAudio();
   errorText = '';
   if (sessionEnded) { sessionEnded = false; sessionPlayed = 0; }
+  if (!playing && !resumeGate && !singleSend) {
+    const band = Math.floor(settings.wpm / 5) * 5;
+    track(`play/${band}-${band + 4} wpm${settings.spacingMode !== 'standard' ? ` ${settings.spacingMode}` : ''}${settings.intervalTraining ? ' intervals' : ''}`);
+    track(`speech/${settings.playSpeech ? 'on' : 'off'}`);
+  }
   playing = true;
   sessionMark = performance.now();
   updateBackground();
@@ -777,6 +817,7 @@ $('slider').addEventListener('input', () => { $('where').textContent = whereText
 $('slider').addEventListener('change', () => move(Number($('slider').value)));
 $('shuffleBtn').addEventListener('click', () => {
   settings.shuffle = !settings.shuffle;
+  if (settings.shuffle) track('shuffle/on');
   saveSettings();
   if (current) {
     // Keeps the current item; the new order applies from the next one.
@@ -788,6 +829,7 @@ $('shuffleBtn').addEventListener('click', () => {
 });
 $('autoPauseBtn').addEventListener('click', () => {
   autoPause = !autoPause;
+  if (autoPause) track('auto-pause/on');
   // Turned on while the Morse plays: send it again and stop before the answer.
   if (autoPause && playing && phase === 'sending') { pause(); start(); }
   render();
@@ -821,7 +863,8 @@ function whereText(position) {
 
 function render() {
   const has = !!current;
-  $('setName').textContent = current?.name ?? 'HW CPY';
+  $('setName').textContent = current?.name ?? '';
+  $('setName').hidden = !current;
   for (const id of ['play', 'prev', 'next', 'slider', 'contentsBtn']) $(id).disabled = !has;
   if (has) $('next').disabled = current.position + 1 >= current.order.length;
   $('playIcon').innerHTML = playing ? ICONS.pause : ICONS.play;
@@ -921,7 +964,6 @@ for (const d of document.querySelectorAll('dialog.sheet')) {
   d.addEventListener('click', (e) => { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
 }
 $('settingsBtn').addEventListener('click', () => { renderSettings(); openSheet('settings'); });
-$('libSettings').addEventListener('click', () => { renderSettings(); openSheet('settings'); });
 $('speedBtn').addEventListener('click', () => { renderSettings(); openSheet('settings'); });
 $('settings').addEventListener('close', () => render());
 
@@ -1093,6 +1135,7 @@ window.addEventListener('error', (e) => showError(`Something went wrong: ${e.mes
 window.addEventListener('unhandledrejection', (e) => showError(`Something went wrong: ${e.reason?.message ?? e.reason}`));
 
 showTab(tab);
+countVisit();
 /// iPhone and iPad: Safari's voice can't be timed reliably (tested 2026-11-24: late starts, clipped or
 /// lost words, whatever the page does with its own audio). Say so once, at the top of the library, until
 /// dismissed.

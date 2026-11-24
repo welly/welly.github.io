@@ -56,12 +56,11 @@
   .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
 
   /* Layout: the library and the player. On a phone one at a time; wide screens side by side. */
-  .app { display: grid; min-height: 100dvh; }
+  .app { display: grid; min-height: calc(100dvh - 65px); }
   @media (min-width: 900px) {
     .app { grid-template-columns: 360px 1fr; }
-    .library { border-right: 1px solid var(--line); height: 100dvh; overflow: auto; position: sticky; top: 0; }
+    .library { border-right: 1px solid var(--line); height: calc(100dvh - 65px); overflow: auto; position: sticky; top: 65px; }
     .app .library[hidden-narrow], .app .player[hidden-narrow] { display: flex !important; }
-    .player .back { display: none; }
   }
   @media (max-width: 899px) {
     [hidden-narrow] { display: none !important; }
@@ -73,6 +72,11 @@
     background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--line);
   }
+  header.bar h1 img { width: 22px; height: 22px; border-radius: 5px; vertical-align: -4px; margin-right: 7px; }
+  /* The back arrow only shows on a phone while the player is showing; otherwise it keeps the title centred. */
+  .page-bar .back { visibility: hidden; }
+  @media (max-width: 899px) { body.in-player .page-bar .back { visibility: visible; } }
+  .set-name { margin: 0; font-size: 17px; font-weight: 600; text-align: center; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   header.bar h1, header.bar h2 { font-size: 17px; margin: 0; flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .icon-btn {
     min-width: 44px; min-height: 44px; border: 0; background: none; border-radius: 12px; color: var(--accent);
@@ -112,7 +116,7 @@
   .row .remove { color: var(--muted); }
 
   /* Player */
-  .player { display: flex; flex-direction: column; min-height: 100dvh; }
+  .player { display: flex; flex-direction: column; min-height: calc(100dvh - 65px); }
   .player main {
     flex: 1; display: flex; flex-direction: column; gap: 18px; width: 100%; max-width: 640px; margin: 0 auto;
     padding: 16px max(18px, env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
@@ -202,13 +206,14 @@
 </style>
 </head>
 <body>
+<!-- One header for the page, as in Mock QSO and QRQ Trainer. On a phone, the back arrow takes the left slot while the player shows. -->
+<header class="bar page-bar">
+  <button class="icon-btn back" id="back" aria-label="Back to the sets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+  <h1><img src="icon.png" alt="" width="22" height="22">HW CPY</h1>
+  <button class="icon-btn" id="settingsBtn" aria-label="Settings" title="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+</header>
 <div class="app">
   <section class="library" id="library">
-    <header class="bar">
-      <button class="icon-btn" id="libSettings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
-      <h1>HW CPY</h1>
-      <span style="width:44px"></span>
-    </header>
     <div class="content">
       <div class="tabs" role="tablist">
         <button role="tab" data-tab="recent" aria-selected="true">Recent</button>
@@ -230,12 +235,8 @@
   </section>
 
   <section class="player" id="player" hidden-narrow>
-    <header class="bar">
-      <button class="icon-btn back" id="back" aria-label="Back to the sets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
-      <h2 id="setName">HW CPY</h2>
-      <button class="icon-btn" id="settingsBtn" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
-    </header>
     <main>
+      <h2 class="set-name" id="setName" hidden></h2>
       <div class="card" aria-live="polite">
         <span class="badge" id="badge"></span>
         <div id="phraseArea"><div class="empty">Choose a practice set.</div></div>
@@ -291,6 +292,7 @@
       <h2>About HW CPY</h2>
       <div class="group">
       <p>HW CPY sends each word or phrase in Morse, speaks it, then sends it again. Settings, recent sets and files you open are kept in this browser only.</p>
+      <p>Visits and the kinds of set played are counted anonymously, without cookies (<a href="https://www.goatcounter.com/">GoatCounter</a>). The text and names of your own files are never sent.</p>
       <p>HW CPY © 2026 Alastair Moore, G3AJM. Free software under the <a href="LICENSE.txt">GNU General Public License, version 3 or later</a>, with no warranty.</p>
       <p>Inspired by the Android app Ditto CW: Morse Player by Billy Francisco. HW CPY is written from scratch and isn’t affiliated with it.</p>
       </div>
@@ -306,6 +308,6 @@
   </div>
 </template>
 
-<script type="module" src="app.js?v=b89653c"></script>
+<script type="module" src="app.js?v=50637c0"></script>
 </body>
 </html>

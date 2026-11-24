@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>G3AJM · Mac tools for radio amateurs</title>
-<meta name="description" content="Free, open-source macOS tools for amateur radio by Alastair Moore, G3AJM.">
+<title>G3AJM · tools for radio amateurs</title>
+<meta name="description" content="Free, open-source tools for amateur radio by Alastair Moore, G3AJM: Morse practice in your browser, and Mac apps.">
 <link rel="icon" href="images/favicon.png">
 <style>
   :root {
@@ -44,6 +44,7 @@
   }
   header p { margin: 8px 0 0; color: var(--muted); font-size: 19px; }
   h2 { margin: 48px 0 16px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .intro { margin: -6px 0 16px; color: var(--muted); font-size: 15px; }
   .app {
     display: grid;
     grid-template-columns: 96px 1fr;
@@ -93,10 +94,63 @@
 <main>
   <header>
     <h1>G3AJM</h1>
-    <p>Alastair Moore · small, free Mac tools for radio amateurs</p>
+    <p>Alastair Moore · small, free tools for radio amateurs, in your browser and on the Mac</p>
   </header>
 
-  <h2>Apps</h2>
+  <h2>Web apps</h2>
+  <p class="intro">Free, in your browser on a phone, tablet or computer, with nothing to install. Each works offline after your first visit, and on a phone you can add it to your Home Screen to open it like an app.</p>
+
+  <section class="app">
+    <img src="images/hw-cpy.png" alt="HW CPY icon">
+    <div>
+      <h3>HW CPY</h3>
+      <div class="req">Morse code listening practice · in your browser</div>
+      <p>Each word or phrase is sent in CW, spoken, then sent again: hear it, check what you copied, and hear it once more knowing what it was. Over time you stop writing things down and start copying in your head.</p>
+      <ul>
+        <li>Thousands of built-in practice sets (letters, numbers, words, call signs, QSO phrases and courses), or your own text files</li>
+        <li>Auto-pause before the answer, Previous to hear it again, shuffle and session length</li>
+        <li>Character speed, Farnsworth or Wordsworth spacing, and interval training</li>
+        <li>Remembers where you got to in each set</li>
+      </ul>
+      <p>The built-in sets are from <a href="https://morsecode.ninja">Morse Code Ninja</a> by Kurt Zoglmann, WE0DX.</p>
+      <div class="actions">
+        <a class="button primary" href="https://g3ajm.radio/hwcpy/">Open HW CPY</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="app">
+    <img src="images/mock-qso.png" alt="Mock QSO icon">
+    <div>
+      <h3>Mock QSO</h3>
+      <div class="req">Made-up CW contacts to copy · in your browser</div>
+      <p>Realistic CW contacts, generated fresh every time, sent by operators with their own speed and fist. You listen and copy; you don’t reply.</p>
+      <ul>
+        <li>Ragchews, short QSOs, DX pile-ups, POTA and SOTA activations, and contests including the CWT, SST and MST</li>
+        <li>Operators from perfect computer sending to hesitant beginners, on paddles, bugs and straight keys, with mistakes corrected as people do</li>
+        <li>Band noise, static, other stations and fading, each of which you can turn off</li>
+        <li>Text shown as it’s sent, after each over, or not at all</li>
+      </ul>
+      <div class="actions">
+        <a class="button primary" href="https://g3ajm.radio/mockqso/">Open Mock QSO</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="app">
+    <img src="images/qrq-trainer.png" alt="QRQ Trainer icon">
+    <div>
+      <h3>QRQ Trainer</h3>
+      <div class="req">High-speed callsign copying · in your browser, and as a Mac app</div>
+      <p>Callsigns sent one at a time at real speed, in the spirit of the classic Rufz trainers. Copy one right and the next is faster; miss it and the next is slower. The web version has the Mac app’s modes, scoring and insights, and keeps your history in your browser.</p>
+      <div class="actions">
+        <a class="button primary" href="https://g3ajm.radio/qrqtrainer/">Open QRQ Trainer</a>
+        <a class="button secondary" href="#qrq-trainer-mac">The Mac app</a>
+      </div>
+    </div>
+  </section>
+
+  <h2>Mac apps</h2>
 
   <section class="app">
     <img src="images/locator.png" alt="Locator icon">
@@ -136,7 +190,7 @@
     </div>
   </section>
 
-  <section class="app">
+  <section class="app" id="qrq-trainer-mac">
     <img src="images/qrq-trainer.png" alt="QRQ Trainer icon">
     <div>
       <h3>QRQ Trainer</h3>
@@ -151,6 +205,7 @@
       </ul>
       <div class="actions">
         <a class="button primary" href="https://github.com/welly/QRQTrainer/releases/latest/download/QRQ-Trainer.zip">Download</a>
+        <a class="button secondary" href="https://g3ajm.radio/qrqtrainer/">Use in your browser</a>
         <a class="button secondary" href="https://g3ajm.radio/QRQTrainer/">Website</a>
         <a class="button secondary" href="https://github.com/welly/QRQTrainer">Source on GitHub</a>
       </div>
@@ -207,9 +262,36 @@
   </div>
 
   <footer>
-    73 de G3AJM · Apps are free and open source (MIT licence; WK Console and CW Training Oscillator are GPL v3) ·
-    <a href="https://github.com/welly">github.com/welly</a>
+    73 de G3AJM · Apps are free and open source (MIT licence; WK Console, CW Training Oscillator, HW CPY and Mock QSO are GPL v3) ·
+    <a href="https://github.com/welly">github.com/welly</a> ·
+    Visits and button clicks are counted anonymously, without cookies (<a href="https://www.goatcounter.com/">GoatCounter</a>)
   </footer>
 </main>
+<script>
+// Usage counts (GoatCounter, anonymous, no cookies), sent the same way as in the web apps (see hwcpy/app.js): the
+// visit, and which buttons are used, as "<app>/<button>". Not counted on localhost; visit with #nocount once to
+// stop counting your own visits (#count to start again).
+(() => {
+  try {
+    if (location.hash === '#nocount') localStorage.setItem('g3ajm.nocount', '1');
+    if (location.hash === '#count') localStorage.removeItem('g3ajm.nocount');
+    if (localStorage.getItem('g3ajm.nocount') === '1') return;
+  } catch { }
+  if (location.protocol !== 'https:' || /^(localhost|127\.|\[::1\])/.test(location.hostname)) return;
+  const count = (fields) => {
+    const q = new URLSearchParams({ ...fields, s: String(screen.width), rnd: Math.random().toString(36).slice(2) });
+    try { fetch(`https://g3ajm.goatcounter.com/count?${q}`, { mode: 'no-cors', credentials: 'omit', keepalive: true, referrerPolicy: 'no-referrer' }); } catch { }
+  };
+  let from = '';
+  try { if (document.referrer && new URL(document.referrer).origin !== location.origin) from = new URL(document.referrer).origin; } catch { }
+  count({ p: location.pathname, t: 'G3AJM', ...(from ? { r: from } : {}) });
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('a.button');
+    if (!a) return;
+    const event = `${a.closest('.app')?.querySelector('h3')?.textContent ?? 'page'}/${a.textContent.trim()}`;
+    count({ p: `home/${event}`, t: event, e: 'true' });
+  });
+})();
+</script>
 </body>
 </html>

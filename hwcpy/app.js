@@ -376,11 +376,11 @@ function audio() {
     // carrying on in silence.
     ctx.addEventListener('statechange', () => {
       debug(`audio ${ctx.state} at ${ctx.currentTime.toFixed(2)}`);
-      if (!playing || ctx.state === 'running' || ctx.state === 'closed') return;
+      // While the voice speaks the page's audio is suspended on purpose (see the loop); leave it be.
+      if (!playing || speechHoldsAudio || ctx.state === 'running' || ctx.state === 'closed') return;
       ctx.resume().then(() => debug(`audio resumed: ${ctx.state}`), (err) => debug(`resume failed: ${err}`));
       setTimeout(() => {
-        // While the voice speaks, iOS may hold the audio; the loop resumes it when the speech ends.
-        if (playing && ctx.state !== 'running' && phase !== 'speaking') {
+        if (playing && !speechHoldsAudio && ctx.state !== 'running') {
           pause();
           showError('The browser stopped the sound. Press play to carry on.');
         }
@@ -390,6 +390,30 @@ function audio() {
   cwGain.gain.value = settings.morseVolume;
   courtesyGain.gain.value = settings.courtesyToneVolume;
   return ctx;
+}
+
+/// True while the voice speaks: the page's audio is suspended so the speech has the iPhone's audio to
+/// itself. With both active, iOS interrupts one or both (the speech is cancelled and the page's audio
+/// stops).
+let speechHoldsAudio = false;
+
+/// Resumes the audio; resolves true once it is running, or false after `timeout` ms. (WebKit can report
+/// the context running before resume()'s promise settles, so the state change counts too.)
+function resumeAudio(timeout = 2000) {
+  if (ctx.state === 'running') return Promise.resolve(true);
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      ctx.removeEventListener('statechange', onChange);
+      resolve(ctx.state === 'running');
+    };
+    const onChange = () => { if (ctx.state === 'running') finish(); };
+    ctx.addEventListener('statechange', onChange);
+    ctx.resume().then(finish, () => { });
+    setTimeout(finish, timeout);
+  });
 }
 
 /// Must run in a tap's handler: iOS only lets audio and speech start from a user gesture. Resolves once
@@ -557,18 +581,21 @@ async function loop(token, { singleSend = false, resumeGate = null } = {}) {
         setPhase('speaking');
         revealed = true;
         render();
+        // Hand the audio to the voice, and take it back afterwards (see speechHoldsAudio).
+        speechHoldsAudio = true;
+        await ctx.suspend().catch(() => { });
+        debug(`audio ${ctx.state} for the speech`);
         await speak(s.text, token);
+        speechHoldsAudio = false;
         if (token !== run) return;
-        if (ctx.state !== 'running') {
-          debug(`after speech the audio is ${ctx.state}; resuming`);
-          await Promise.race([ctx.resume().catch(() => { }), new Promise((r) => setTimeout(r, 2000))]);
+        if (!(await resumeAudio())) {
           if (token !== run) return;
-          if (ctx.state !== 'running') {
-            pause();
-            showError('The browser stopped the sound. Press play to carry on.');
-            return;
-          }
+          debug(`after the speech the audio is ${ctx.state}`);
+          pause();
+          showError('The browser stopped the sound. Press play to carry on.');
+          return;
         }
+        if (token !== run) return;
         t = ctx.currentTime + LEAD;
       }
     }
@@ -631,7 +658,7 @@ function start({ singleSend = false } = {}) {
   updateMediaSession();
   const token = run;
   const go = () => { if (token === run) loop(token, { singleSend, resumeGate }); };
-  unlocked.then(() => (ctx.state === 'running' ? go() : ctx.resume().then(go, go)));
+  unlocked.then(() => resumeAudio()).then(go);
 }
 
 /// Stops sound and the loop; keeps the position.
@@ -643,6 +670,7 @@ function halt() {
   timers.clear();
   if ('speechSynthesis' in window && (speechSynthesis.speaking || speechSynthesis.pending)) speechSynthesis.cancel();
   gate = null;
+  speechHoldsAudio = false;
 }
 
 function pause() {
@@ -808,7 +836,13 @@ function updateMediaSession() {
   ms.playbackState = playing ? 'playing' : 'paused';
 }
 if ('mediaSession' in navigator) {
-  const handlers = { play: () => { if (!playing) start(); }, pause: () => { if (playing) pause(); }, nexttrack: () => next(), previoustrack: () => previous() };
+  const handlers = {
+    play: () => { debug('media key: play'); if (!playing) start(); },
+    // Handing the audio to the voice can make iOS send a pause of its own; ignore that one.
+    pause: () => { debug(`media key: pause${speechHoldsAudio ? ' (ignored: speaking)' : ''}`); if (playing && !speechHoldsAudio) pause(); },
+    nexttrack: () => { debug('media key: next'); next(); },
+    previoustrack: () => { debug('media key: previous'); previous(); },
+  };
   for (const [action, handler] of Object.entries(handlers)) { try { navigator.mediaSession.setActionHandler(action, handler); } catch { } }
 }
 

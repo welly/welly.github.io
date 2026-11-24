@@ -9,6 +9,10 @@ const engineReady = import(`./engine.js${v}`).then(({ createEngine }) => createE
 // ?debug: an event log on the page (a phone has no console), and no service worker, so the newest files load.
 const DEBUG = new URLSearchParams(location.search).has('debug');
 const debugLines = [];
+/// ?keepaudio: leave the page's audio running while the voice speaks, rather than suspending it. An
+/// experiment for iPhone (2026-11-24): suspending may let the audio output power down, so the voice
+/// starts late or clipped.
+const KEEP_AUDIO = new URLSearchParams(location.search).has('keepaudio');
 function debug(message) {
   if (!DEBUG) return;
   const line = `${new Date().toISOString().slice(11, 23)} ${message}`;
@@ -620,15 +624,19 @@ async function loop(token, { singleSend = false, resumeGate = null } = {}) {
         // At least a moment on an iPhone, even when the speech follows straight on (after auto-pause).
         const speakAt = performance.now() + Math.max(Math.max(0, t - ctx.currentTime), IOS ? 0.3 : 0) * 1000;
         speechHoldsAudio = true;
-        await ctx.suspend().catch(() => { });
-        debug(`audio ${ctx.state} for the speech`);
+        if (!KEEP_AUDIO) {
+          await ctx.suspend().catch(() => { });
+          debug(`audio ${ctx.state} for the speech`);
+        }
         await sleepUntil(speakAt, token);
         if (token !== run) return;
         setPhase('speaking');
         revealed = true;
         render();
+        const speechCalled = performance.now();
         await speak(s.text, token);
         const spokenAt = performance.now();
+        debug(`speech took ${((spokenAt - speechCalled) / 1000).toFixed(2)} s from speak() to its end`);
         speechHoldsAudio = false;
         if (token !== run) return;
         if (!(await resumeAudio())) {

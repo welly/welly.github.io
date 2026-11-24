@@ -1,4 +1,4 @@
-// HW CPY in the browser: CWKit (Swift, compiled to WebAssembly) parses the practice files and plans and
+// HW CPY in the browser: PracticeKit and CWKit (Swift, compiled to WebAssembly) parses the practice files and plans and
 // renders each item; this file plays it. The Morse and courtesy tone are scheduled on the AudioContext
 // clock; speech uses the Web Speech API, and the replay is scheduled when the speech ends.
 // ?v=… when published (publish-web.sh stamps it), so the engine and wasm match this page.

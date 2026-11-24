@@ -1,4 +1,4 @@
-// Loads hwcpy.wasm (CWKit compiled from Swift): parses practice files and plans and renders each item.
+// Loads hwcpy.wasm (PracticeKit and CWKit compiled from Swift): parses practice files and plans and renders each item.
 // Works in the page and in Node (for scripts/web-check.mjs).
 
 /// The few WASI calls the Swift runtime makes. There are no files, arguments or environment;

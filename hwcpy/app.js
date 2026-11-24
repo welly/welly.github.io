@@ -1010,7 +1010,7 @@ function renderSettings() {
       stepper('Rise', null, 'riseMs', { min: 1, max: () => 20, format: (x) => `${x} ms` }),
       stepper('Fall', null, 'fallMs', { min: 1, max: () => 20, format: (x) => `${x} ms` })),
     ...sec('Speech',
-      toggle('Play speech', IOS ? 'On an iPhone, turn off silent mode to hear it' : null, 'playSpeech'),
+      toggle('Play speech', IOS ? 'On iPhone and iPad the voice can start late or be clipped, and silent mode mutes it' : null, 'playSpeech'),
       volume('Speech volume', 'speechVolume'),
       picker('Language', langs.length ? null : 'This browser has no voices', settings.speechLanguage, [['', 'System'], ...langs],
         (x) => { settings.speechLanguage = x; changed(); })),
@@ -1093,6 +1093,19 @@ window.addEventListener('error', (e) => showError(`Something went wrong: ${e.mes
 window.addEventListener('unhandledrejection', (e) => showError(`Something went wrong: ${e.reason?.message ?? e.reason}`));
 
 showTab(tab);
+/// iPhone and iPad: Safari's voice can't be timed reliably (tested 2026-11-24: late starts, clipped or
+/// lost words, whatever the page does with its own audio). Say so once, at the top of the library, until
+/// dismissed.
+function iosNotice() {
+  if (!IOS || store.get('iosNoticeDismissed', false)) return;
+  const note = el('div', { class: 'notice', role: 'note' },
+    el('p', {}, el('strong', {}, 'On iPhone and iPad'), ' the Morse plays exactly, but Safari’s voice can start late, be clipped, or skip a word now and then. It works best on a computer or an Android phone.'),
+    el('p', {}, 'If you can’t hear the voice at all, turn off silent mode.'),
+    el('button', { class: 'link-btn', onclick: () => { store.set('iosNoticeDismissed', true); note.remove(); } }, 'OK'));
+  $('library').querySelector('.content').prepend(note);
+}
+iosNotice();
+
 const libraryCredits = () => $('library').querySelector('.content').append(credits());
 catalogReady.then(() => { if (tab === 'builtin') renderBuiltIn(); renderLibrary(); libraryCredits(); })
   .catch(() => { fill($('builtinList'), el('div', { class: 'empty' }, 'The built-in sets couldn’t be loaded.')); libraryCredits(); });

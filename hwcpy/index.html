@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HW CPY · Morse code listening practice</title>
+<meta name="description" content="Morse code listening practice: each word or phrase is sent in CW, spoken, then sent again. Free, in your browser.">
+<link rel="canonical" href="https://g3ajm.radio/hwcpy/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="G3AJM">
+<meta property="og:url" content="https://g3ajm.radio/hwcpy/">
+<meta property="og:title" content="HW CPY: Morse code listening practice">
+<meta property="og:description" content="Each word or phrase is sent in CW, spoken, then sent again. Thousands of practice sets, or your own files. Free, in your browser, and it works offline.">
+<meta property="og:image" content="https://g3ajm.radio/hwcpy/icon-512.png">
+<meta property="og:locale" content="en_GB">
+<meta name="theme-color" content="#f6f1e7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16130e" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HW CPY">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+  :root {
+    --bg: #f6f1e7; --surface: #ffffff; --surface-2: #efe8da; --text: #1d1a14; --muted: #6b6355; --line: rgba(60, 45, 20, 0.12);
+    --accent: #b86a00; --accent-ink: #ffffff; --soft: rgba(184, 106, 0, 0.10); --danger: #b3261e;
+    --shadow: 0 1px 2px rgba(40, 30, 10, 0.05), 0 12px 36px rgba(40, 30, 10, 0.10);
+    --radius: 16px;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16130e; --surface: #221e17; --surface-2: #2c271e; --text: #f3ede2; --muted: #a79d8b; --line: rgba(255, 240, 210, 0.10);
+      --accent: #f0a634; --accent-ink: #1d1500; --soft: rgba(240, 166, 52, 0.14); --danger: #ff8a80;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 36px rgba(0, 0, 0, 0.35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16130e; --surface: #221e17; --surface-2: #2c271e; --text: #f3ede2; --muted: #a79d8b; --line: rgba(255, 240, 210, 0.10);
+    --accent: #f0a634; --accent-ink: #1d1500; --soft: rgba(240, 166, 52, 0.14); --danger: #ff8a80;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 36px rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font: 17px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent;
+    min-height: 100dvh;
+  }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; touch-action: manipulation; }
+  [hidden] { display: none !important; }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+
+  /* Layout: the library and the player. On a phone one at a time; wide screens side by side. */
+  .app { display: grid; min-height: 100dvh; }
+  @media (min-width: 900px) {
+    .app { grid-template-columns: 360px 1fr; }
+    .library { border-right: 1px solid var(--line); height: 100dvh; overflow: auto; position: sticky; top: 0; }
+    .app .library[hidden-narrow], .app .player[hidden-narrow] { display: flex !important; }
+    .player .back { display: none; }
+  }
+  @media (max-width: 899px) {
+    [hidden-narrow] { display: none !important; }
+  }
+
+  header.bar {
+    position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 8px;
+    padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
+    background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  header.bar h1, header.bar h2 { font-size: 17px; margin: 0; flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .icon-btn {
+    min-width: 44px; min-height: 44px; border: 0; background: none; border-radius: 12px; color: var(--accent);
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 8px;
+  }
+  .icon-btn:active { background: var(--soft); }
+  .icon-btn svg { width: 24px; height: 24px; }
+  .icon-btn[aria-pressed="true"] { background: var(--soft); }
+  .icon-btn[aria-pressed="false"] { color: var(--muted); }
+  .icon-btn:disabled { opacity: 0.35; cursor: default; }
+
+  /* Library */
+  .library { display: flex; flex-direction: column; }
+  .library .content { padding: 12px max(14px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
+  .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; background: var(--surface-2); border-radius: 12px; margin-bottom: 12px; }
+  .tabs button { border: 0; background: none; padding: 9px 6px; border-radius: 9px; font-weight: 600; font-size: 15px; color: var(--muted); min-height: 40px; }
+  .tabs button[aria-selected="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+  .search { width: 100%; padding: 11px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); margin-bottom: 12px; font-size: 16px; }
+  .list { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-bottom: 16px; }
+  .list .row, .list summary {
+    display: flex; align-items: center; gap: 10px; width: 100%; min-height: 50px; padding: 10px 14px; border: 0; background: none;
+    text-align: left; border-top: 1px solid var(--line); list-style: none; cursor: pointer;
+  }
+  .list > :first-child > summary, .list > .row:first-child, .list > :first-child.row { border-top: 0; }
+  .list summary::-webkit-details-marker { display: none; }
+  .list summary::after { content: "›"; margin-left: auto; color: var(--muted); font-size: 22px; transition: transform 0.15s; }
+  .list details[open] > summary::after { transform: rotate(90deg); }
+  .list details details > summary { padding-left: 28px; }
+  .list details .row { padding-left: 28px; }
+  .list details details .row { padding-left: 44px; }
+  .row .name { flex: 1; min-width: 0; }
+  .row .sub, .count { color: var(--muted); font-size: 14px; }
+  .row:active, .list summary:active { background: var(--soft); }
+  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 18px 6px 8px; font-weight: 600; }
+  .empty { color: var(--muted); text-align: center; padding: 28px 16px; }
+  .open-file { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 50px; border-radius: 14px; border: 1px dashed var(--accent); color: var(--accent); background: none; font-weight: 600; margin-bottom: 14px; }
+  .row .remove { color: var(--muted); }
+
+  /* Player */
+  .player { display: flex; flex-direction: column; min-height: 100dvh; }
+  .player main {
+    flex: 1; display: flex; flex-direction: column; gap: 18px; width: 100%; max-width: 640px; margin: 0 auto;
+    padding: 16px max(18px, env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  }
+  .card { flex: 1; min-height: 240px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; background: var(--surface); border-radius: 22px; box-shadow: var(--shadow); padding: 24px 18px; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 600; color: var(--muted); background: var(--surface-2); padding: 5px 12px; border-radius: 999px; min-height: 30px; }
+  .badge:empty { visibility: hidden; }
+  .phrase { font: 600 clamp(28px, 9vw, 46px)/1.15 ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+  .phrase.long { font-size: clamp(20px, 6vw, 30px); }
+  .spoken { color: var(--muted); font-size: 20px; }
+  .then { color: var(--muted); }
+  .hidden-ear { color: var(--muted); opacity: 0.55; }
+  .hidden-ear svg { width: 56px; height: 56px; }
+  .error { color: var(--danger); text-align: center; font-size: 15px; }
+  .position { display: flex; flex-direction: column; gap: 6px; }
+  .position input { width: 100%; accent-color: var(--accent); height: 28px; }
+  .position .where { text-align: center; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .transport { display: flex; align-items: center; justify-content: center; gap: 40px; }
+  .transport .icon-btn { color: var(--text); }
+  .transport .icon-btn svg { width: 34px; height: 34px; }
+  .transport .play { width: 76px; height: 76px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); }
+  .transport .play svg { width: 34px; height: 34px; }
+  .transport .play:active { filter: brightness(0.9); background: var(--accent); }
+  .tools { display: flex; align-items: center; gap: 4px; }
+  .tools .speed { margin-left: auto; color: var(--accent); font-size: 15px; white-space: nowrap; }
+
+  /* Sheets (settings, contents): full screen on a phone, a panel on wider screens. */
+  dialog.sheet {
+    border: 0; padding: 0; margin: 0; width: 100%; max-width: 100%; height: 100%; max-height: 100%;
+    background: var(--bg); color: var(--text);
+  }
+  @media (min-width: 700px) {
+    dialog.sheet { margin: auto; width: min(560px, 92vw); height: min(780px, 90dvh); border-radius: 18px; box-shadow: var(--shadow); }
+  }
+  dialog.sheet::backdrop { background: rgba(0, 0, 0, 0.35); }
+  dialog.sheet .body { height: 100%; display: flex; flex-direction: column; }
+  dialog.sheet .scroll:focus { outline: none; }
+  dialog.sheet .scroll { flex: 1; overflow: auto; padding: 8px max(14px, env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
+  .group { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); margin-bottom: 8px; overflow: hidden; }
+  .field { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 14px; border-top: 1px solid var(--line); }
+  .field:first-child { border-top: 0; }
+  .field .label { flex: 1; min-width: 0; }
+  .field .label small { display: block; color: var(--muted); font-size: 13px; }
+  .field output, .field .value { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 4.5em; text-align: right; }
+  .field.slider { flex-wrap: wrap; }
+  .field.slider input[type=range] { flex-basis: 100%; accent-color: var(--accent); height: 28px; }
+  .field select { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); max-width: 60%; }
+  .stepper { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .stepper button { width: 44px; height: 38px; border: 0; background: var(--surface-2); font-size: 22px; color: var(--accent); }
+  .stepper button + button { border-left: 1px solid var(--line); }
+  .stepper button:disabled { opacity: 0.35; }
+  .switch { position: relative; width: 51px; height: 31px; flex: none; }
+  .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); transition: background 0.15s; pointer-events: none; }
+  .switch span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 25px; height: 25px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.15s; }
+  .switch input:checked + span { background: #34a853; border-color: transparent; }
+  .switch input:checked + span::after { transform: translateX(20px); }
+  .switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .field.disabled { opacity: 0.45; }
+  .link-btn { border: 0; background: none; color: var(--accent); padding: 0; min-height: 44px; text-align: left; width: 100%; }
+  .about { color: var(--muted); font-size: 14px; padding: 6px 6px 0; }
+  .about a { color: var(--accent); }
+  .abbr-row { display: flex; gap: 8px; align-items: center; padding: 8px 14px; border-top: 1px solid var(--line); }
+  .abbr-row:first-child { border-top: 0; }
+  .abbr-row input { min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: 16px; }
+  .abbr-row input:first-child { width: 6.5em; text-transform: uppercase; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .abbr-row input:nth-child(3) { flex: 1; }
+  .contents .row { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  .contents .row .n { color: var(--muted); min-width: 3em; text-align: right; font-size: 13px; font-family: inherit; }
+  .contents .row.current { background: var(--soft); }
+  .contents .row .plain { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--muted); }
+  .credits { color: var(--muted); font-size: 13px; line-height: 1.5; padding: 4px 6px 0; }
+  .credits h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; margin: 14px 0 4px; }
+  .credits p { margin: 0 0 8px; }
+  .credits a { color: var(--accent); }
+  .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 15px; z-index: 50; max-width: 90vw; }
+  .ring { width: 15px; height: 15px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="library" id="library">
+    <header class="bar">
+      <button class="icon-btn" id="libSettings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+      <h1>HW CPY</h1>
+      <span style="width:44px"></span>
+    </header>
+    <div class="content">
+      <div class="tabs" role="tablist">
+        <button role="tab" data-tab="recent" aria-selected="true">Recent</button>
+        <button role="tab" data-tab="builtin" aria-selected="false">Built-in</button>
+        <button role="tab" data-tab="added" aria-selected="false">Added</button>
+      </div>
+      <div data-panel="recent"></div>
+      <div data-panel="builtin" hidden>
+        <input class="search" id="search" type="search" placeholder="Search the built-in sets" autocomplete="off" aria-label="Search the built-in sets">
+        <div id="builtinList"><div class="empty">Loading…</div></div>
+      </div>
+      <div data-panel="added" hidden>
+        <button class="open-file" id="openFile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Open a text file…</button>
+        <input type="file" id="fileInput" accept=".txt,text/plain" hidden>
+        <div id="addedList"></div>
+        <p class="about">One word or phrase per line, as <span class="mono">MORSE [spoken]^</span>, <span class="mono">MORSE [spoken|repeat]^</span> or plain text. Files stay in this browser.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="player" id="player" hidden-narrow>
+    <header class="bar">
+      <button class="icon-btn back" id="back" aria-label="Back to the sets"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <h2 id="setName">HW CPY</h2>
+      <button class="icon-btn" id="settingsBtn" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+    </header>
+    <main>
+      <div class="card" aria-live="polite">
+        <span class="badge" id="badge"></span>
+        <div id="phraseArea"><div class="empty">Choose a practice set.</div></div>
+      </div>
+      <div class="error" id="error" hidden></div>
+      <div class="position">
+        <input type="range" id="slider" min="0" max="0" value="0" step="1" aria-label="Position">
+        <div class="where" id="where"></div>
+      </div>
+      <div class="transport">
+        <button class="icon-btn" id="prev" aria-label="Previous" title="Play this one again; press twice for the one before"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+        <button class="icon-btn play" id="play" aria-label="Play"><svg viewBox="0 0 24 24" fill="currentColor" id="playIcon"><path d="M8 5v14l11-7z"/></svg></button>
+        <button class="icon-btn" id="next" aria-label="Next"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+      </div>
+      <div class="tools">
+        <button class="icon-btn" id="contentsBtn" aria-label="Contents" title="Contents"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="18" r="1" fill="currentColor"/></svg></button>
+        <button class="icon-btn" id="shuffleBtn" aria-label="Shuffle" aria-pressed="false" title="Shuffle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h4v4M4 20L20 4M20 16v4h-4M15 15l5 5M4 4l5 5"/></svg></button>
+        <button class="icon-btn" id="autoPauseBtn" aria-label="Auto-pause" aria-pressed="false" title="Auto-pause: stop after the Morse until you press play"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 5v14l9-7zM14 5h3v14h-3zM19 5h3v14h-3z"/></svg></button>
+        <button class="icon-btn speed" id="speedBtn"></button>
+      </div>
+    </main>
+  </section>
+</div>
+
+<dialog class="sheet" id="settings" aria-labelledby="settingsTitle">
+  <div class="body">
+    <header class="bar"><span style="width:44px"></span><h2 id="settingsTitle">Settings</h2><button class="icon-btn" data-close style="font-weight:600">Done</button></header>
+    <div class="scroll" tabindex="-1" autofocus id="settingsForm"></div>
+  </div>
+</dialog>
+
+<dialog class="sheet" id="contents" aria-labelledby="contentsTitle">
+  <div class="body">
+    <header class="bar"><span style="width:44px"></span><h2 id="contentsTitle">Contents</h2><button class="icon-btn" data-close style="font-weight:600">Done</button></header>
+    <div class="scroll" tabindex="-1" autofocus><div class="list contents" id="contentsList"></div></div>
+  </div>
+</dialog>
+
+<dialog class="sheet" id="abbreviations" aria-labelledby="abbrTitle">
+  <div class="body">
+    <header class="bar"><button class="icon-btn" id="abbrRestore" style="font-size:15px">Restore</button><h2 id="abbrTitle">Abbreviations</h2><button class="icon-btn" data-close style="font-weight:600">Done</button></header>
+    <div class="scroll" tabindex="-1" autofocus>
+      <button class="open-file" id="abbrAdd">Add an abbreviation</button>
+      <div class="group" id="abbrList"></div>
+    </div>
+  </div>
+</dialog>
+
+<!-- About and licences: shown at the foot of the library and of Settings. -->
+<template id="creditsTemplate">
+  <div class="credits">
+    <h3>About HW CPY</h3>
+    <p>HW CPY sends each word or phrase in Morse, speaks it, then sends it again. Settings, recent sets and files you open are kept in this browser only.</p>
+    <p>HW CPY © 2026 Alastair Moore, G3AJM. Free software under the <a href="LICENSE.txt">GNU General Public License, version 3 or later</a>, with no warranty.</p>
+    <p>Inspired by the Android app Ditto CW: Morse Player by Billy Francisco. HW CPY is written from scratch and isn’t affiliated with it.</p>
+    <h3>Built-in practice sets</h3>
+    <p>The built-in sets are from <a href="https://morsecode.ninja">Morse Code Ninja</a> by Kurt Zoglmann, WE0DX, used with thanks. They are licensed under the <a href="LICENSE.txt">GNU General Public License, version 3</a>, and come with no warranty.</p>
+    <p>Source: <a data-source href="https://github.com/zoglmannk/Morse-Code-Ninja/tree/8c654a4c604d8720ef554be547f96fce4ab5f422">zoglmannk/Morse-Code-Ninja</a>, at commit <span data-commit-id>8c654a4 (2024-02-18)</span>. Changes made by HW CPY: the sets are sorted into categories and groups, some course lessons are given tidier names, and each set is compressed; their text is otherwise unchanged. The spoken letter-by-letter sets are left out.</p>
+  </div>
+</template>
+
+<script type="module" src="app.js?v=22d86a7"></script>
+</body>
+</html>

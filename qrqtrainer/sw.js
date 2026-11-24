@@ -4,7 +4,7 @@
 // the network first, so a new version is picked up whenever there is a connection; everything else is stamped
 // with ?v=VERSION and served from the cache. A new version installs alongside and the old cache is dropped.
 
-const VERSION = 'ec05acd';
+const VERSION = '4e1773b';
 const CACHE = `qrq-${VERSION}`;
 const v = `?v=${VERSION}`;
 const FILES = [

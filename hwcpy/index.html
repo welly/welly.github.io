@@ -191,6 +191,9 @@
   .notice { background: var(--soft); border-radius: 14px; padding: 12px 14px 4px; margin-bottom: 14px; font-size: 15px; }
   .notice p { margin: 0 0 8px; }
   .notice .link-btn { min-height: 36px; font-weight: 600; }
+  .player-notice { margin-bottom: 0; }
+  /* Side by side, the library's copy of the notice is already showing. */
+  @media (min-width: 900px) { .player-notice { display: none; } }
   /* About, as in Mock QSO and QRQ Trainer: titled cards with one point per row, then a one-line footer. */
   /* Shared by the G3AJM web apps (see Ham Tools/CLAUDE.md): the help and About area below the app starts after a clear break, 40px and a fine line. */
   .help { margin-top: 40px; padding-top: 8px; border-top: 1px solid var(--line); }
@@ -308,6 +311,6 @@
   </div>
 </template>
 
-<script type="module" src="app.js?v=18ae2f9"></script>
+<script type="module" src="app.js?v=420fc83"></script>
 </body>
 </html>

@@ -1137,15 +1137,22 @@ window.addEventListener('unhandledrejection', (e) => showError(`Something went w
 showTab(tab);
 countVisit();
 /// iPhone and iPad: Safari's voice can't be timed reliably (tested 2026-11-24: late starts, clipped or
-/// lost words, whatever the page does with its own audio). Say so once, at the top of the library, until
-/// dismissed.
+/// lost words, whatever the page does with its own audio). Say so at the top of the library and of the
+/// player (where a phone opens straight to, with the library hidden), until OK in either dismisses both.
+/// When the two are side by side (wide screens), only the library's shows.
 function iosNotice() {
   if (!IOS || store.get('iosNoticeDismissed', false)) return;
-  const note = el('div', { class: 'notice', role: 'note' },
-    el('p', {}, el('strong', {}, 'On iPhone and iPad'), ' the Morse plays exactly, but Safari’s voice can start late, be clipped, or skip a word now and then. It works best on a computer or an Android phone.'),
-    el('p', {}, 'If you can’t hear the voice at all, turn off silent mode.'),
-    el('button', { class: 'link-btn', onclick: () => { store.set('iosNoticeDismissed', true); note.remove(); } }, 'OK'));
-  $('library').querySelector('.content').prepend(note);
+  const notes = [];
+  const note = (extraClass) => {
+    const node = el('div', { class: `notice ${extraClass}`, role: 'note' },
+      el('p', {}, el('strong', {}, 'On iPhone and iPad'), ' the Morse plays exactly, but Safari’s voice can start late, be clipped, or skip a word now and then. It works best on a computer or an Android phone.'),
+      el('p', {}, 'If you can’t hear the voice at all, turn off silent mode.'),
+      el('button', { class: 'link-btn', onclick: () => { store.set('iosNoticeDismissed', true); for (const n of notes) n.remove(); } }, 'OK'));
+    notes.push(node);
+    return node;
+  };
+  $('library').querySelector('.content').prepend(note(''));
+  $('setName').after(note('player-notice'));
 }
 iosNotice();
 

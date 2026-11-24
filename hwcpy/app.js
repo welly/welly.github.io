@@ -6,7 +6,25 @@ const VERSION = new URL(import.meta.url).searchParams.get('v') ?? '';
 const v = VERSION ? `?v=${VERSION}` : '';
 const engineReady = import(`./engine.js${v}`).then(({ createEngine }) => createEngine(fetch(`hwcpy.wasm${v}`)));
 
-if (VERSION && 'serviceWorker' in navigator) {
+// ?debug: an event log on the page (a phone has no console), and no service worker, so the newest files load.
+const DEBUG = new URLSearchParams(location.search).has('debug');
+const debugLines = [];
+function debug(message) {
+  if (!DEBUG) return;
+  const line = `${new Date().toISOString().slice(11, 23)} ${message}`;
+  debugLines.unshift(line);
+  debugLines.length = Math.min(debugLines.length, 80);
+  let box = document.getElementById('debugLog');
+  if (!box) {
+    box = document.createElement('pre');
+    box.id = 'debugLog';
+    box.style.cssText = 'position:fixed;left:0;right:0;bottom:0;max-height:38vh;overflow:auto;margin:0;padding:6px 8px calc(6px + env(safe-area-inset-bottom));font:11px/1.3 ui-monospace,Menlo,monospace;background:rgba(0,0,0,.82);color:#9f9;z-index:100;white-space:pre-wrap';
+    document.body.append(box);
+  }
+  box.textContent = debugLines.join('\n');
+}
+
+if (VERSION && !DEBUG && 'serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js', { scope: './' }).catch(() => { });
 }
 
@@ -353,25 +371,47 @@ function audio() {
     ctx = new AudioContext({ latencyHint: 'playback' });
     cwGain = ctx.createGain(); cwGain.connect(ctx.destination);
     courtesyGain = ctx.createGain(); courtesyGain.connect(ctx.destination);
+    // Safari suspends or interrupts the audio (when speech takes over the audio session, a call comes in,
+    // or the page is hidden). While playing, ask for it back; if that fails, pause properly rather than
+    // carrying on in silence.
+    ctx.addEventListener('statechange', () => {
+      debug(`audio ${ctx.state} at ${ctx.currentTime.toFixed(2)}`);
+      if (!playing || ctx.state === 'running' || ctx.state === 'closed') return;
+      ctx.resume().then(() => debug(`audio resumed: ${ctx.state}`), (err) => debug(`resume failed: ${err}`));
+      setTimeout(() => {
+        // While the voice speaks, iOS may hold the audio; the loop resumes it when the speech ends.
+        if (playing && ctx.state !== 'running' && phase !== 'speaking') {
+          pause();
+          showError('The browser stopped the sound. Press play to carry on.');
+        }
+      }, 3000);
+    });
   }
   cwGain.gain.value = settings.morseVolume;
   courtesyGain.gain.value = settings.courtesyToneVolume;
   return ctx;
 }
 
-/// Must run in a tap's handler: iOS only lets audio and speech start from a user gesture.
+/// Must run in a tap's handler: iOS only lets audio and speech start from a user gesture. Resolves once
+/// it is safe to start the Morse: on an iPhone, speech starting takes over the audio session and can cut
+/// off sound that is already playing, so the silent unlock utterance has to finish first.
 function unlockAudio() {
   // "playback": iOS treats it as media (plays with the silent switch on, and on the lock screen).
   try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch { }
   const c = audio();
   if (c.state !== 'running') c.resume().catch(() => { });
-  if ('speechSynthesis' in window && !unlockAudio.spoke) {
+  if (!('speechSynthesis' in window) || unlockAudio.spoke) return Promise.resolve();
+  unlockAudio.spoke = true;
+  return new Promise((resolve) => {
     // Empty, not a space: Chrome can hang its whole queue on an utterance of only whitespace.
     const u = new SpeechSynthesisUtterance('');
     u.volume = 0;
+    const done = () => { debug('speech unlocked'); setTimeout(resolve, 150); };
+    u.onend = done;
+    u.onerror = done;
+    setTimeout(resolve, 800); // some engines send no events for an empty utterance
     speechSynthesis.speak(u);
-    unlockAudio.spoke = true;
-  }
+  });
 }
 
 function play(samples, offset, count, when, gain) {
@@ -381,8 +421,9 @@ function play(samples, offset, count, when, gain) {
   src.buffer = buffer;
   src.connect(gain);
   src.start(when);
+  debug(`sound ${(count / ctx.sampleRate).toFixed(2)} s at ${when.toFixed(2)} (now ${ctx.currentTime.toFixed(2)}, ${ctx.state})`);
+  src.onended = () => { scheduled.delete(src); debug(`sound ended at ${ctx.currentTime.toFixed(2)}`); };
   scheduled.add(src);
-  src.onended = () => scheduled.delete(src);
 }
 
 function updateBackground() {
@@ -446,9 +487,10 @@ function speak(text, token) {
     let done = false;
     const finish = () => { if (done) return; done = true; speaking.delete(u); clearTimeout(limit); resolve(); };
     // Some engines never send `end` (or are stopped in the background); don't hang the player.
-    const limit = setTimeout(finish, 5000 + text.length * 250);
-    u.onend = finish;
-    u.onerror = finish;
+    const limit = setTimeout(() => { debug('speech gave no end event: timed out'); finish(); }, 5000 + text.length * 250);
+    u.onstart = () => debug(`speech started: "${u.text}"`);
+    u.onend = () => { debug('speech ended'); finish(); };
+    u.onerror = (e) => { debug(`speech error: ${e.error}`); finish(); };
     if (token !== run) { finish(); return; }
     // Anything still queued (an utterance whose end never came) would hold this one up.
     if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
@@ -517,6 +559,16 @@ async function loop(token, { singleSend = false, resumeGate = null } = {}) {
         render();
         await speak(s.text, token);
         if (token !== run) return;
+        if (ctx.state !== 'running') {
+          debug(`after speech the audio is ${ctx.state}; resuming`);
+          await Promise.race([ctx.resume().catch(() => { }), new Promise((r) => setTimeout(r, 2000))]);
+          if (token !== run) return;
+          if (ctx.state !== 'running') {
+            pause();
+            showError('The browser stopped the sound. Press play to carry on.');
+            return;
+          }
+        }
         t = ctx.currentTime + LEAD;
       }
     }
@@ -566,18 +618,20 @@ function noteSession() { if (sessionMark) sessionPlayed += (performance.now() - 
 
 function start({ singleSend = false } = {}) {
   if (!current || !engine) return;
-  unlockAudio();
-  if (sessionEnded) { sessionEnded = false; sessionPlayed = 0; }
   const resumeGate = gate;
+  // Stop anything still going first: cancelling speech after unlocking would cancel the unlock.
   halt();
+  const unlocked = unlockAudio();
+  errorText = '';
+  if (sessionEnded) { sessionEnded = false; sessionPlayed = 0; }
   playing = true;
   sessionMark = performance.now();
   updateBackground();
   render();
   updateMediaSession();
   const token = run;
-  const go = () => loop(token, { singleSend, resumeGate });
-  if (ctx.state === 'running') go(); else ctx.resume().then(go, go);
+  const go = () => { if (token === run) loop(token, { singleSend, resumeGate }); };
+  unlocked.then(() => (ctx.state === 'running' ? go() : ctx.resume().then(go, go)));
 }
 
 /// Stops sound and the loop; keeps the position.

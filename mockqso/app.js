@@ -496,8 +496,8 @@ function updateOvers(t) {
 
 // MARK: Controls
 
-const PLAY = 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-2 14.5v-9l6 4.5z';
-const PAUSE = 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM9 8h2v8H9zm4 0h2v8h-2z';
+const PLAY = 'M8 5v14l11-7z';
+const PAUSE = 'M7 5h4v14H7zM13 5h4v14h-4z';
 const REVEAL_ICONS = {
   always: 'M12 5C7 5 2.7 8.1 1 12.5 2.7 16.9 7 20 12 20s9.3-3.1 11-7.5C21.3 8.1 17 5 12 5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-8a3 3 0 1 0 0 6 3 3 0 0 0 0-6z',
   afterEachOver: 'M4 4h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2zm2 5v2h5V9zm7 0v2h5V9zm-7 4v2h9v-2z',
@@ -637,15 +637,27 @@ function cycleReveal() {
   for (const row of rows) row.state = '';
   update();
 }
+// Settings is a sheet (a modal <dialog>), as in HW CPY: full screen on a phone, a panel on wider screens.
 function showSettings(open) {
-  $('settingsPanel').hidden = !open;
+  const sheet = $('settingsPanel');
+  if (open && !sheet.open) sheet.showModal();
+  if (!open && sheet.open) sheet.close();
   $('settingsButton').setAttribute('aria-expanded', String(open));
 }
-$('settingsButton').addEventListener('click', () => showSettings($('settingsPanel').hidden));
+// − and + beside a number in Settings: step it, keep it in range, and apply it as if typed.
+for (const button of document.querySelectorAll('.stepper button')) {
+  button.addEventListener('click', () => {
+    const input = $(button.dataset.for);
+    if (input.disabled) return;
+    const value = Number(input.value || input.min) + Number(button.dataset.step);
+    input.value = String(Math.min(Number(input.max), Math.max(Number(input.min), value)));
+    input.dispatchEvent(new Event('change'));
+  });
+}
+$('settingsButton').addEventListener('click', () => showSettings(true));
+$('settingsPanel').addEventListener('close', () => $('settingsButton').setAttribute('aria-expanded', 'false'));
 $('settingsDone').addEventListener('click', () => { showSettings(false); $('settingsButton').focus(); });
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !$('settingsPanel').hidden) { showSettings(false); $('settingsButton').focus(); }
-});
+// Escape closes the Settings sheet itself (it's a <dialog>).
 $('speed').addEventListener('click', () => {
   showSettings(true);
   $('wpm').focus();
@@ -654,6 +666,7 @@ $('position').addEventListener('input', () => { scrubbing = true; update(); });
 $('position').addEventListener('change', () => { scrubbing = false; seek(Number($('position').value)); });
 document.addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if ($('settingsPanel').open) return; // the sheet has the keyboard
   const target = e.target instanceof Element ? e.target : document.body;
   if (target.closest('input, select, textarea')) return;
   // Space and Enter keep their usual meaning on a focused button, link or Settings.

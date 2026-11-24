@@ -21,143 +21,124 @@
 <meta name="twitter:title" content="Mock QSO: copy realistic CW QSOs">
 <meta name="twitter:description" content="Ragchews, activations, pile-ups and contests, sent by operators with their own speed and fist. Free, in your browser.">
 <meta name="twitter:image" content="https://g3ajm.radio/mockqso/share.png?v=2">
-<meta name="theme-color" content="#eef1f7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0b1020" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f6f1e7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16130e" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="icon.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Mock QSO">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
+  /* The same look as HW CPY (hw_cpy/web): warm paper and amber, cards, a blurred bar, sheets for settings. */
   :root {
-    --bg: #eef1f7; --surface: rgba(255, 255, 255, 0.86); --solid: #ffffff; --surface-2: #f1f3f8; --text: #141925; --muted: #5d6576;
-    --faint: #6b7383; --ahead: #8a91a0; --line: rgba(20, 30, 60, 0.09); --accent: #1f5bc0; --accent-ink: #ffffff;
-    --btn-1: #2a68d4; --btn-2: #1f5bc0;
-    --amber: #e6a823; --amber-soft: #fff1cc; --soft: rgba(31, 91, 192, 0.08);
-    --glow-1: rgba(47, 116, 224, 0.20); --glow-2: rgba(244, 201, 93, 0.28);
-    --shadow: 0 1px 2px rgba(20, 30, 60, 0.05), 0 18px 50px rgba(20, 30, 60, 0.12);
+    --bg: #f6f1e7; --surface: #ffffff; --surface-2: #efe8da; --text: #1d1a14; --muted: #6b6355; --line: rgba(60, 45, 20, 0.12);
+    --accent: #b86a00; --accent-ink: #ffffff; --soft: rgba(184, 106, 0, 0.10); --danger: #b3261e;
+    --faint: #6f6757; --ahead: #a39a88;
+    --shadow: 0 1px 2px rgba(40, 30, 10, 0.05), 0 12px 36px rgba(40, 30, 10, 0.10);
+    --radius: 16px;
     --s0: #1f5bc0; --s1: #a85800; --s2: #1a7a33; --s3: #c2185b; --s4: #7b3fbf; --s5: #007480; --s6: #8d5a2b; --s7: #3f51b5;
-    color-scheme: light dark;
+    color-scheme: light;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #0b1020; --surface: rgba(22, 29, 46, 0.86); --solid: #161d2e; --surface-2: #1e2639; --text: #eef1f7; --muted: #a3abbd;
-      --faint: #858ea4; --ahead: #6c7590; --line: rgba(255, 255, 255, 0.08); --accent: #5b9bff; --accent-ink: #ffffff;
-      --btn-1: #2f6fdc; --btn-2: #2559b8;
-      --amber: #f4c95d; --amber-soft: #3b3220; --soft: rgba(91, 155, 255, 0.11);
-      --glow-1: rgba(61, 127, 232, 0.28); --glow-2: rgba(244, 201, 93, 0.10);
-      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 24px 60px rgba(0, 0, 0, 0.5);
-      --s0: #5b9bff; --s1: #ffa24a; --s2: #4cc76a; --s3: #ff6b9a; --s4: #b58cff; --s5: #3ccbd6; --s6: #d19a66; --s7: #8c9eff;
+      --bg: #16130e; --surface: #221e17; --surface-2: #2c271e; --text: #f3ede2; --muted: #a79d8b; --line: rgba(255, 240, 210, 0.10);
+      --accent: #f0a634; --accent-ink: #1d1500; --soft: rgba(240, 166, 52, 0.14); --danger: #ff8a80;
+      --faint: #a39985; --ahead: #6f6655;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 36px rgba(0, 0, 0, 0.35);
+      --s0: #7fb0ff; --s1: #ffa24a; --s2: #5fd07d; --s3: #ff7aa5; --s4: #c39dff; --s5: #4fd3dd; --s6: #dba776; --s7: #9aaaff;
+      color-scheme: dark;
     }
   }
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
   body {
-    margin: 0; color: var(--text); background-color: var(--bg);
-    background-image: radial-gradient(900px 520px at 8% -8%, var(--glow-1), transparent 70%),
-      radial-gradient(760px 480px at 100% 0%, var(--glow-2), transparent 70%);
-    background-repeat: no-repeat; background-attachment: fixed;
-    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
+    font: 17px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent;
   }
-  button, select, input { font: inherit; color: inherit; }
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { text-decoration: underline; }
-  .wrap { width: 100%; max-width: 1080px; margin: 0 auto; padding: 0 16px; }
-  kbd { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: .85em; background: var(--surface-2);
-    border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; }
-
-  /* Slim top bar */
-  nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; height: 60px;
-    padding-top: env(safe-area-inset-top); box-sizing: content-box; }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; color: var(--text); font-size: 17px; letter-spacing: -0.01em; }
-  .brand:hover { text-decoration: none; }
-  .brand img { width: 28px; height: 28px; border-radius: 7px; box-shadow: 0 2px 8px rgba(20, 50, 120, 0.25); }
-  nav .links { display: flex; gap: 18px; font-size: 15px; }
-  nav .links a { color: var(--muted); }
-
-  .intro { margin: 4px 2px 28px; color: var(--muted); font-size: 15px; }
-  .intro strong { color: var(--text); font-weight: 600; }
-  .about strong { color: var(--text); font-weight: 600; }
-
-  /* The player fills most of the window */
-  .player { display: flex; flex-direction: column; height: max(520px, calc(100svh - 170px - env(safe-area-inset-top)));
-    background: var(--surface); -webkit-backdrop-filter: saturate(1.4) blur(18px); backdrop-filter: saturate(1.4) blur(18px);
-    border: 1px solid var(--line); border-radius: 22px; box-shadow: var(--shadow); overflow: hidden; }
-  .player-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--line); flex: none; }
-  .top { display: flex; gap: 8px; align-items: center; }
-  .sr-only, .top label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  button, input, select { font: inherit; color: inherit; }
+  button { cursor: pointer; touch-action: manipulation; }
+  a { color: var(--accent); }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .over:focus-visible { outline-offset: -2px; }
-  .select-wrap { position: relative; flex: 1 1 auto; max-width: 340px; min-width: 0; }
-  .select-wrap::after { content: ""; position: absolute; right: 12px; top: 50%; width: 7px; height: 7px; margin-top: -5px;
-    border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); pointer-events: none; }
-  #kind { width: 100%; appearance: none; -webkit-appearance: none; font-weight: 650; font-size: 16px; padding: 9px 34px 9px 12px;
-    border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); cursor: pointer; }
-  .spacer { flex: 1; }
-  .btn { padding: 9px 16px; border-radius: 12px; border: 1px solid var(--line); background: var(--solid); cursor: pointer; }
-  .btn.primary { background: linear-gradient(180deg, var(--btn-1), var(--btn-2)); border-color: transparent; color: var(--accent-ink);
-    font-weight: 650; box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); }
-  .btn.primary:active { transform: translateY(1px); }
-  .btn:disabled { opacity: 0.55; cursor: default; }
-  #new { white-space: nowrap; flex: none; }
-  .meta { color: var(--muted); font-size: 14px; margin: 10px 2px 0; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  kbd { font: 0.85em ui-monospace, "SF Mono", Menlo, monospace; background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 6px; padding: 1px 6px; }
 
-  .btn.square { display: inline-grid; place-items: center; padding: 0; width: 40px; height: 40px; flex: none; }
-  .btn.square svg { width: 19px; height: 19px; fill: var(--accent); }
-  #shareButton[aria-expanded="true"] { background: var(--soft); }
-  #settingsButton { display: inline-flex; align-items: center; gap: 7px; flex: none; font-weight: 600; color: var(--text); }
-  #settingsButton svg { width: 18px; height: 18px; fill: var(--accent); }
-  #settingsButton[aria-expanded="true"] { background: var(--soft); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
-  /* Settings open over the over list, with the transport still below */
-  .settings { position: absolute; inset: 0; z-index: 4; overflow-y: auto; overscroll-behavior: contain;
-    background: var(--solid); padding: 16px 22px 24px; }
-  .settings[hidden] { display: none; }
-  .settings-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-  .settings-head h2 { font-size: 17px; margin: 0; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px 40px; padding: 8px 0 4px; }
-  .grid fieldset { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 6px; align-content: start; }
-  .grid .column { display: grid; gap: 20px; align-content: start; }
-  .grid legend { padding: 0; margin-bottom: 8px; font-size: 12px; font-weight: 650; text-transform: uppercase;
-    letter-spacing: 0.08em; color: var(--muted); }
-  .grid label { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; font-size: 15px; min-height: 38px; }
-  .grid label[hidden] { display: none; }
-  .grid label.sub { padding-left: 14px; }
-  .grid label:has(:disabled) { color: var(--faint); }
-  .grid select, .grid input[type=number], .grid input[type=text] {
-    width: 10rem; height: 36px; font-size: 16px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--line);
-    background: var(--surface-2); }
-  .grid input[type=number] { width: 5.5rem; justify-self: end; }
-  .grid input[type=text] { text-transform: uppercase; }
-  .grid input::placeholder { text-transform: none; color: var(--faint); }
-  .grid :disabled { opacity: 0.5; }
-  .grid input[type=checkbox] { justify-self: end; accent-color: var(--accent); width: 20px; height: 20px; margin: 0 2px; }
-  .note { color: var(--muted); font-size: 13px; margin: 18px 0 0; }
+  /* Bar */
+  header.bar {
+    position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 8px;
+    padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 10px max(12px, env(safe-area-inset-left));
+    background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--line);
+  }
+  header.bar h1, header.bar h2 { font-size: 17px; margin: 0; flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  header.bar h1 img { width: 22px; height: 22px; border-radius: 5px; vertical-align: -4px; margin-right: 7px; }
+  .icon-btn {
+    min-width: 44px; min-height: 44px; border: 0; background: none; border-radius: 12px; color: var(--accent);
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 8px;
+  }
+  .icon-btn:hover:not(:disabled), .icon-btn:active, .icon-btn[aria-expanded="true"] { background: var(--soft); }
+  .icon-btn svg { width: 24px; height: 24px; }
+  .icon-btn:disabled { opacity: 0.35; cursor: default; }
+  .done { font-weight: 600; }
+
+  /* Share menu, from the bar */
+  .share-wrap { position: relative; }
+  .share-menu { position: absolute; left: 0; top: calc(100% + 6px); z-index: 20; width: min(300px, calc(100vw - 24px)); padding: 6px;
+    background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); border: 1px solid var(--line); }
+  .share-menu button { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 10px;
+    padding: 10px 12px; font-size: 16px; font-weight: 600; color: var(--text); }
+  .share-menu button:hover, .share-menu button:focus-visible { background: var(--soft); }
+  .share-menu small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+  [hidden] { display: none !important; }
+
+  /* The player: one column, filling the window below the bar */
+  main.page {
+    display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 820px; margin: 0 auto;
+    height: max(560px, calc(100dvh - 65px - env(safe-area-inset-top)));
+    padding: 14px max(16px, env(safe-area-inset-right)) calc(14px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+  .intro { margin: 0 4px; color: var(--muted); font-size: 15px; }
+  .intro strong { color: var(--text); }
+  .intro-short { display: none; }
+  .card { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--surface); border-radius: 22px;
+    box-shadow: var(--shadow); overflow: hidden; }
+  .player-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--line); }
+  .top { display: flex; gap: 10px; align-items: center; }
+  .select-wrap { position: relative; flex: 1 1 auto; min-width: 0; max-width: 380px; }
+  .select-wrap::after { content: ""; position: absolute; right: 13px; top: 50%; width: 7px; height: 7px; margin-top: -5px;
+    border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); pointer-events: none; }
+  #kind { width: 100%; appearance: none; -webkit-appearance: none; font-weight: 600; font-size: 16px; min-height: 44px;
+    padding: 8px 34px 8px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface-2); }
+  .spacer { flex: 1; }
+  .btn-primary { flex: none; min-height: 44px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--accent);
+    color: var(--accent-ink); font-weight: 600; white-space: nowrap; }
+  .btn-primary:active { filter: brightness(0.92); }
+  .btn-primary:disabled { opacity: 0.5; cursor: default; }
+  .meta { color: var(--muted); font-size: 14px; margin: 10px 2px 0; }
 
   /* Overs: call, then what was sent, as in the apps */
   .list-area { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
-  #loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
-    background: color-mix(in srgb, var(--solid) 75%, transparent); color: var(--muted); font-size: 15px;
-    animation: fade-in .2s ease .15s both; }
-  @keyframes fade-in { from { opacity: 0; } }
-  .spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent);
-    animation: spin .8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
   #scroller { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; padding: 0 10px; }
   #overs { padding: 12px 0 24px; display: flex; flex-direction: column; gap: 4px; }
+  #loading { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    background: color-mix(in srgb, var(--surface) 78%, transparent); color: var(--muted); font-size: 15px; animation: fade-in .2s ease .15s both; }
+  @keyframes fade-in { from { opacity: 0; } }
+  .spinner { width: 28px; height: 28px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 2.4s; } }
   .list-hint { color: var(--faint); font-size: 14px; text-align: center; padding: 28px 16px; margin: 0; }
-  .list-hint[hidden] { display: none; }
-  .empty { color: var(--muted); text-align: center; padding: 56px 16px; margin: 0; }
+  .empty { color: var(--muted); text-align: center; padding: 48px 16px; margin: 0; }
   .empty p { margin: 0 auto 10px; max-width: 46ch; }
   .empty strong { color: var(--text); }
-  .empty .gentle { font-size: 14px; margin-top: 14px; padding: 12px 16px; border-radius: 12px; background: var(--soft); color: var(--text); }
-  .inline-link { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--accent); cursor: pointer;
+  .empty .gentle { font-size: 15px; margin-top: 16px; padding: 12px 16px; border-radius: 14px; background: var(--soft); color: var(--text); }
+  .inline-link { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--accent);
     text-decoration: underline; text-underline-offset: 2px; }
-  .empty .bubble { display: block; margin: 0 auto 16px; width: 76px; height: 76px; border-radius: 18px;
-    box-shadow: 0 10px 30px rgba(20, 60, 140, 0.28); }
-  .over { display: flex; gap: 12px; padding: 8px 10px; border-radius: 10px; cursor: pointer; align-items: baseline; }
+  .empty .bubble { display: block; margin: 0 auto 16px; width: 76px; height: 76px; border-radius: 18px; box-shadow: var(--shadow); }
+  .over { display: flex; gap: 12px; padding: 8px 10px; border-radius: 12px; cursor: pointer; align-items: baseline; }
   .over:hover { background: var(--soft); }
+  .over:focus-visible { outline-offset: -2px; }
   .over.unheard { opacity: 0.35; }
-  .over[hidden], .stations[hidden], #loading[hidden], .intro-short { display: none; }
   .call { font: 600 15px ui-monospace, "SF Mono", Menlo, monospace; min-width: 84px; }
   .text { font: 16px/1.5 ui-monospace, "SF Mono", Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; flex: 1; }
   .text .ps { text-decoration: overline; }
@@ -168,219 +149,232 @@
   @keyframes pulse { 50% { opacity: 0.4; } }
   @media (prefers-reduced-motion: reduce) { .sending { animation: none; } }
   .stations { margin-top: 10px; padding: 14px 16px; border-radius: 16px; background: var(--surface-2); font-size: 14px; }
-  .stations h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 8px; }
+  .stations h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 8px; }
   .stations div { display: flex; gap: 12px; align-items: baseline; color: var(--muted); padding: 2px 0; }
   .stations .call { font: 700 14px ui-monospace, "SF Mono", Menlo, monospace; min-width: 80px; }
 
-  /* Transport */
-  .player-foot { position: relative; flex: none; border-top: 1px solid var(--line); padding: 6px 14px max(10px, env(safe-area-inset-bottom));
-    background: color-mix(in srgb, var(--solid) 70%, transparent); }
-  .scrub { display: flex; align-items: center; gap: 10px; font: 12px ui-monospace, Menlo, monospace; color: var(--muted);
-    padding-top: 8px; font-variant-numeric: tabular-nums; }
-  #position { flex: 1; min-width: 0; accent-color: var(--accent); }
-  .transport { display: grid; grid-template-columns: 1fr auto 1fr; grid-template-areas: "left controls right"; align-items: center; padding-top: 2px; }
-  .side { display: flex; gap: 4px; align-items: center; }
-  .side.left { grid-area: left; }
-  .side.right { grid-area: right; justify-content: flex-end; }
-  .controls { grid-area: controls; display: flex; align-items: center; gap: 2px; }
-  .share-wrap { position: relative; }
-  .share-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 5; width: 290px; padding: 6px;
-    background: var(--solid); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); }
-  .share-menu[hidden] { display: none; }
-  .share-menu button { display: block; width: 100%; text-align: left; background: none; border: 0; border-radius: 10px;
-    padding: 9px 12px; font-size: 15px; font-weight: 600; cursor: pointer; color: var(--text); }
-  .share-menu button:hover, .share-menu button:focus-visible { background: var(--soft); }
-  .share-menu button[hidden] { display: none; }
-  .share-menu small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 1px; }
-  .toast { position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%); z-index: 6; padding: 8px 14px;
-    border-radius: 99px; background: var(--text); color: var(--bg); font-size: 14px; font-weight: 600; white-space: nowrap;
-    box-shadow: var(--shadow); }
-  .toast[hidden] { display: none; }
-  .icon { background: none; border: none; cursor: pointer; padding: 10px; border-radius: 12px; line-height: 0; color: var(--accent); }
-  .icon:hover:not(:disabled) { background: var(--soft); }
-  .icon:disabled { opacity: 0.3; cursor: default; }
-  .icon svg { width: 24px; height: 24px; fill: currentColor; }
-  #play { padding: 4px; border-radius: 50%; }
-  #play:hover { background: none; }
-  #play svg { width: 58px; height: 58px; filter: drop-shadow(0 6px 14px color-mix(in srgb, var(--accent) 40%, transparent)); }
-  #play:active svg { transform: scale(0.96); }
-  .pill { display: inline-flex; align-items: center; gap: 6px; font: 650 13px -apple-system, BlinkMacSystemFont, sans-serif;
-    color: var(--text); background: var(--surface-2); border: 1px solid var(--line); border-radius: 99px; padding: 7px 12px;
-    white-space: nowrap; cursor: pointer; min-height: 40px; }
-  .pill:hover { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
-  .pill svg { width: 16px; height: 16px; fill: currentColor; color: var(--accent); flex: none; }
-  #speed::after { content: ""; width: 6px; height: 6px; margin: -3px 1px 0 2px; border-right: 2px solid var(--muted);
-    border-bottom: 2px solid var(--muted); transform: rotate(45deg); }
+  /* Position, transport and tools, as in HW CPY */
+  .position { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+  #position { flex: 1; min-width: 0; accent-color: var(--accent); height: 28px; }
+  .transport { display: flex; align-items: center; justify-content: center; gap: 28px; }
+  .transport .icon-btn { color: var(--text); }
+  .transport .icon-btn svg { width: 30px; height: 30px; fill: currentColor; }
+  #play { width: 72px; height: 72px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); }
+  #play svg { width: 32px; height: 32px; }
+  #play:hover, #play:active { background: var(--accent); filter: brightness(0.94); }
+  .tools { display: flex; align-items: center; gap: 4px; }
+  .tools .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
+  #reveal { color: var(--accent); font-size: 15px; font-weight: 600; }
+  #speed { margin-left: auto; color: var(--accent); font-size: 15px; font-weight: 600; white-space: nowrap; }
   /* All three labels share one cell, so the button is always as wide as the longest and doesn't move under the pointer */
   .reveal-labels { display: grid; }
   .reveal-labels > span { grid-area: 1 / 1; visibility: hidden; text-align: left; }
   .reveal-labels > span.on { visibility: visible; }
-  #status { color: var(--faint); font-size: 12px; text-align: center; padding-top: 2px; }
+  #status { color: var(--faint); font-size: 12px; text-align: center; }
   #status:empty { display: none; }
+  .toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 50;
+    background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 15px; max-width: 90vw; }
 
-  /* About, below the player */
-  .about { padding: 56px 0 0; }
-  .cols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
-  .about h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 10px; }
-  .about p, .about li { font-size: 15px; color: var(--muted); margin: 0 0 10px; }
-  .about ul { margin: 0; padding-left: 18px; }
-  footer.site { margin-top: 40px; padding: 20px 0 max(32px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line);
-    color: var(--faint); font-size: 13px; text-align: center; }
+  /* Settings: a sheet, full screen on a phone and a panel on wider screens */
+  dialog.sheet { border: 0; padding: 0; margin: 0; width: 100%; max-width: 100%; height: 100%; max-height: 100%;
+    background: var(--bg); color: var(--text); }
+  @media (min-width: 700px) {
+    dialog.sheet { margin: auto; width: min(560px, 92vw); height: min(800px, 90dvh); border-radius: 18px; box-shadow: var(--shadow); }
+  }
+  dialog.sheet::backdrop { background: rgba(0, 0, 0, 0.35); }
+  dialog.sheet .body { height: 100%; display: flex; flex-direction: column; }
+  dialog.sheet .scroll { flex: 1; overflow: auto; padding: 8px max(14px, env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left)); }
+  dialog.sheet .scroll:focus { outline: none; }
+  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 18px 6px 8px; font-weight: 600; }
+  .group { background: var(--surface); border-radius: 14px; box-shadow: var(--shadow); margin-bottom: 8px; overflow: hidden; }
+  .field { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 8px 14px; border-top: 1px solid var(--line); }
+  .field:first-child { border-top: 0; }
+  .field .label { flex: 1; min-width: 0; }
+  .field .label small { display: block; color: var(--muted); font-size: 13px; }
+  .field.sub .label { padding-left: 14px; }
+  .field:has(:disabled) .label, .field:has(:disabled) .value { opacity: 0.45; }
+  .field select { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); max-width: 60%; font-size: 16px; }
+  .field input[type=text] { width: 10.5em; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2);
+    font-size: 16px; text-transform: uppercase; }
+  .field input[type=text]::placeholder { text-transform: none; color: var(--faint); }
+  .field input[type=text]:disabled { opacity: 0.45; }
+  /* A number with − and + either side of nothing: the value is typed or stepped */
+  .field .value { color: var(--muted); font-variant-numeric: tabular-nums; display: inline-flex; align-items: baseline; gap: 4px; }
+  .field .value input { width: 3.2em; border: 0; background: none; color: inherit; text-align: right; font-size: 16px; padding: 0;
+    -moz-appearance: textfield; appearance: textfield; }
+  .field .value input::-webkit-inner-spin-button, .field .value input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .stepper { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; flex: none; }
+  .stepper button { width: 44px; height: 38px; border: 0; background: var(--surface-2); font-size: 22px; line-height: 1; color: var(--accent); }
+  .stepper button + button { border-left: 1px solid var(--line); }
+  .field:has(:disabled) .stepper button { opacity: 0.35; pointer-events: none; }
+  .switch { position: relative; width: 51px; height: 31px; flex: none; }
+  .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; }
+  .switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); transition: background 0.15s; pointer-events: none; }
+  .switch span::after { content: ""; position: absolute; top: 2px; left: 2px; width: 25px; height: 25px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.3); transition: transform 0.15s; }
+  .switch input:checked + span { background: #34a853; border-color: transparent; }
+  .switch input:checked + span::after { transform: translateX(20px); }
+  .switch input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sheet-note { color: var(--muted); font-size: 14px; padding: 6px 6px 0; margin: 0; }
 
-  @media (max-width: 980px) { .cols { grid-template-columns: 1fr 1fr; } }
-  @media (max-width: 640px) { .cols { grid-template-columns: 1fr; gap: 8px; } }
+  /* Help, below the player */
+  .help { max-width: 820px; margin: 0 auto; padding: 8px max(16px, env(safe-area-inset-right)) calc(32px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
+  .help .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .help .group { padding: 4px 16px 8px; margin-bottom: 12px; box-shadow: var(--shadow); }
+  .help h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 18px 6px 8px; font-weight: 600; }
+  .help p, .help li { font-size: 15px; color: var(--text); margin: 8px 0; line-height: 1.45; }
+  .help ul { margin: 0; padding-left: 18px; }
+  .help strong { font-weight: 600; }
+  footer.site { margin-top: 18px; color: var(--muted); font-size: 13px; text-align: center; }
+
+  @media (max-width: 760px) { .help .cols { grid-template-columns: 1fr; } }
   @media (max-width: 560px) {
-    .wrap.app { padding: 0 8px; }
-    nav { padding-left: 8px; padding-right: 8px; height: 52px; }
-    .intro { margin: 0 8px 14px; font-size: 14px; }
+    main.page { padding-top: 10px; gap: 12px; height: max(520px, calc(100dvh - 65px - env(safe-area-inset-top))); }
+    .intro { font-size: 14px; }
     .intro-long { display: none; }
     .intro-short { display: inline; }
-    .player { border-radius: 18px; height: max(440px, calc(100svh - 126px - env(safe-area-inset-top))); }
-    /* With Settings open the page scrolls instead of squeezing the over list */
-    #settingsButton .label { display: none; } /* gear only on a phone */
-    #settingsButton { padding: 9px 11px; }
-    .settings { padding: 14px 16px 20px; }
-    /* The kind menu gets its own line; Share, Settings and New QSO sit under it */
-    .top { flex-wrap: wrap; row-gap: 8px; }
-    .select-wrap { flex: 1 1 100%; max-width: none; }
-    /* Phone: Speed and Text on a row of their own, the transport buttons centred below */
-    .transport { grid-template-columns: auto 1fr; grid-template-areas: "left right" "controls controls"; row-gap: 2px; padding-top: 8px; }
-    .controls { justify-self: center; }
-    /* The menu sits above the player's controls, right-aligned, so it stays on screen */
-    /* The menu spans the player under the top row, so it stays on screen */
-    .player-head { position: relative; }
-    .share-wrap { position: static; }
-    .share-menu { left: 12px; right: 12px; top: 112px; width: auto; }
+    .card { border-radius: 18px; }
+    .player-head { padding: 12px 12px 10px; }
     #scroller { padding: 0 4px; }
     .call { min-width: 72px; font-size: 14px; }
     .text { font-size: 15px; }
+    .transport { gap: 18px; }
+    #play { width: 64px; height: 64px; }
   }
 </style>
 </head>
 <body>
-<div class="wrap app">
-  <nav>
-    <a class="brand" href="#"><img src="icon.png" alt="" width="28" height="28">Mock QSO</a>
-    <div class="links"><a href="#help">Help</a><a href="https://g3ajm.radio/">G3AJM</a></div>
-  </nav>
+<header class="bar">
+  <div class="share-wrap">
+    <button class="icon-btn" id="shareButton" title="Share" aria-label="Share" aria-haspopup="menu" aria-expanded="false" aria-controls="shareMenu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5M7 11H5.5A1.5 1.5 0 0 0 4 12.5v7A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5H17"/></svg></button>
+    <div class="share-menu" id="shareMenu" role="menu" hidden>
+      <button role="menuitem" id="shareSettings">Copy link to these settings<small>Kind, speed and band. Bookmark it or send it.</small></button>
+      <button role="menuitem" id="shareQSO">Copy link to this QSO<small>The exact contact, for someone else to copy.</small></button>
+    </div>
+  </div>
+  <h1><img src="icon.png" alt="" width="22" height="22">Mock QSO</h1>
+  <button class="icon-btn" id="settingsButton" aria-label="Settings" title="Settings" aria-haspopup="dialog" aria-expanded="false" aria-controls="settingsPanel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg></button>
+</header>
+
+<!-- The player: app.js looks these elements up by id. -->
+<main class="page">
   <p class="intro"><span class="intro-short">Realistic CW QSOs for copying practice. Choose a kind, press <strong>New QSO</strong> and copy what you hear. <a href="#help">Help</a></span><span class="intro-long">Copying practice with realistic CW QSOs: ragchews, activations, pile-ups and contests, a new one each time, sent by operators with their own speed and fist. Choose a kind of QSO, press <strong>New QSO</strong> and copy what you hear. <a href="#help">How to use it</a></span></p>
-  <!-- The player: app.js looks these elements up by id. -->
-  <section class="player" id="listen" aria-label="Player">
+
+  <section class="card" id="listen" aria-label="Player">
     <div class="player-head">
       <div class="top">
-        <label for="kind">Kind of QSO</label>
+        <label for="kind" class="sr-only">Kind of QSO</label>
         <span class="select-wrap"><select id="kind"></select></span>
         <span class="spacer"></span>
-        <div class="share-wrap">
-          <button class="btn square" id="shareButton" title="Share" aria-label="Share" aria-haspopup="menu" aria-expanded="false" aria-controls="shareMenu">
-            <svg viewBox="0 0 24 24"><path d="M12 2.6l4.7 4.7-1.4 1.4L13 6.4V15h-2V6.4L8.7 8.7 7.3 7.3zM5 11h3v2H6v7h12v-7h-2v-2h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1z"/></svg></button>
-          <div class="share-menu" id="shareMenu" role="menu" hidden>
-            <button role="menuitem" id="shareSettings">Copy link to these settings<small>Kind, speed and band. Bookmark it or send it.</small></button>
-            <button role="menuitem" id="shareQSO">Copy link to this QSO<small>The exact contact, for someone else to copy.</small></button>
-          </div>
-        </div>
-        <button class="btn" id="settingsButton" aria-expanded="false" aria-controls="settingsPanel" title="Settings">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6-2-3.5-2.5 1a7.4 7.4 0 0 0-1.7-1L15 3h-4l-.4 2.9a7.4 7.4 0 0 0-1.7 1l-2.5-1-2 3.5L6.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6 2 3.5 2.5-1a7.4 7.4 0 0 0 1.7 1L11 21h4l.4-2.9a7.4 7.4 0 0 0 1.7-1l2.5 1 2-3.5zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg><span class="label">Settings</span></button>
-        <button class="btn primary" id="new">New QSO</button>
+        <button class="btn-primary" id="new">New QSO</button>
       </div>
       <p class="meta"><span id="summary"></span></p>
     </div>
-
     <div class="list-area">
-      <div class="settings" id="settingsPanel" role="region" aria-labelledby="settingsTitle" hidden>
-        <div class="settings-head">
-          <h2 id="settingsTitle">Settings</h2>
-          <button class="btn primary" id="settingsDone" type="button">Done</button>
-        </div>
-        <div class="grid">
-          <div class="column">
-            <fieldset>
-              <legend>Speed</legend>
-              <label>Speed (WPM) <input type="number" id="wpm" min="5" max="50" step="1"></label>
-              <label>Farnsworth spacing <input type="checkbox" id="farnsworth"></label>
-              <label class="sub">Overall speed (WPM) <input type="number" id="effectiveWPM" min="3" max="49" step="1"></label>
-            </fieldset>
-            <fieldset>
-              <legend>QSOs</legend>
-              <label>Operators <select id="sending">
-                <option value="mixed">Mixed (realistic)</option><option value="computer">Computer</option>
-                <option value="expert">Expert</option><option value="good">Good</option>
-                <option value="average">Average</option><option value="beginner">Beginner</option></select></label>
-              <label id="contactsRow">Number of contacts <input type="number" id="contacts" min="1" max="20" step="1"></label>
-            </fieldset>
-          </div>
-          <fieldset>
-            <legend>Band</legend>
-            <label>Noise <select id="noise"><option value="off">Off</option><option value="low">Low</option>
-              <option value="medium">Medium</option><option value="high">High</option></select></label>
-            <label>Static (QRN) <input type="checkbox" id="qrn"></label>
-            <label>Other stations (QRM) <input type="checkbox" id="qrm"></label>
-            <label>Fading (QSB) <input type="checkbox" id="qsb"></label>
-            <label>Tone (Hz) <input type="number" id="tone" min="300" max="1000" step="10"></label>
-            <label class="sub">All stations on this tone <input type="checkbox" id="sameTone"></label>
-          </fieldset>
-          <fieldset>
-            <legend>You</legend>
-            <label>Your callsign <input type="text" id="myCall" autocapitalize="characters" autocomplete="off" spellcheck="false"></label>
-            <label class="sub">Your name <input type="text" id="myName" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Made up if blank" maxlength="12"></label>
-            <label class="sub">Your QTH <input type="text" id="myQTH" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Made up if blank" maxlength="20"></label>
-            <label>Put my call in QSOs <select id="includeMe"><option value="never">Never</option>
-              <option value="sometimes">Sometimes</option><option value="always">Always</option></select></label>
-          </fieldset>
-        </div>
-        <p class="note">Speed, noise, fading and tone change the QSO you’re hearing; the rest apply to the next one.</p>
-      </div>
       <div id="scroller"><div id="overs"></div></div>
       <div id="loading" hidden><span class="spinner"></span>Making a QSO…</div>
     </div>
-
-    <div class="player-foot">
-      <div class="scrub">
-        <span id="now">0:00</span>
-        <input type="range" id="position" min="0" max="1" step="0.01" value="0" disabled aria-label="Position">
-        <span id="total">0:00</span>
-      </div>
-      <div class="transport">
-        <div class="side left">
-          <button class="pill" id="speed" title="Speed settings" aria-label="Speed settings">20 WPM</button>
-        </div>
-        <div class="controls">
-          <button class="icon" id="replay" title="Replay from the start" aria-label="Replay" disabled>
-            <svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg></button>
-          <button class="icon" id="prev" title="Previous over" aria-label="Previous over" disabled>
-            <svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
-          <button class="icon" id="play" title="Play" aria-label="Play">
-            <svg viewBox="0 0 24 24"><path id="playIcon" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-2 14.5v-9l6 4.5z"/></svg></button>
-          <button class="icon" id="next" title="Next over" aria-label="Next over" disabled>
-            <svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
-        </div>
-        <div class="side right">
-          <button class="pill" id="reveal" aria-label="Show the text">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path id="revealIcon" d=""/></svg><span class="reveal-labels" id="revealLabel" aria-hidden="true"><span data-mode="always">Text: Always</span><span data-mode="afterEachOver">Text: After each over</span><span data-mode="hidden">Text: Off</span></span></button>
-        </div>
-      </div>
-      <div id="status" aria-live="polite"></div>
-      <div class="toast" id="toast" role="status" hidden></div>
-    </div>
   </section>
-</div>
 
-<section class="about" id="help">
-  <div class="wrap">
+  <div class="position">
+    <span id="now">0:00</span>
+    <input type="range" id="position" min="0" max="1" step="0.01" value="0" disabled aria-label="Position">
+    <span id="total">0:00</span>
+  </div>
+  <div class="transport">
+    <button class="icon-btn" id="prev" title="Previous over" aria-label="Previous over" disabled>
+      <svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
+    <button class="icon-btn" id="play" title="Play" aria-label="Play">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path id="playIcon" d="M8 5v14l11-7z"/></svg></button>
+    <button class="icon-btn" id="next" title="Next over" aria-label="Next over" disabled>
+      <svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+  </div>
+  <div class="tools">
+    <button class="icon-btn" id="replay" title="Replay from the start" aria-label="Replay from the start" disabled>
+      <svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a6 6 0 1 1-6 6H4a8 8 0 1 0 8-8z"/></svg></button>
+    <button class="icon-btn" id="reveal" aria-label="Show the text">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path id="revealIcon" d=""/></svg><span class="reveal-labels" id="revealLabel" aria-hidden="true"><span data-mode="always">Text: Always</span><span data-mode="afterEachOver">Text: After each over</span><span data-mode="hidden">Text: Off</span></span></button>
+    <button class="icon-btn" id="speed" title="Speed settings" aria-label="Speed settings">20 WPM</button>
+  </div>
+  <div id="status" aria-live="polite"></div>
+</main>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<dialog class="sheet" id="settingsPanel" aria-labelledby="settingsTitle">
+  <div class="body">
+    <header class="bar"><span style="width:44px"></span><h2 id="settingsTitle">Settings</h2><button class="icon-btn done" id="settingsDone" type="button">Done</button></header>
+    <div class="scroll" tabindex="-1" autofocus>
+      <div class="section-title">Speed</div>
+      <div class="group">
+        <div class="field"><label class="label" for="wpm">Character speed</label>
+          <span class="value"><input type="number" id="wpm" min="5" max="50" step="1" inputmode="numeric"> WPM</span>
+          <span class="stepper"><button type="button" data-for="wpm" data-step="-1" aria-label="Slower">−</button><button type="button" data-for="wpm" data-step="1" aria-label="Faster">+</button></span></div>
+        <div class="field"><label class="label" for="farnsworth">Farnsworth spacing<small>Characters at full speed, longer gaps between them</small></label>
+          <span class="switch"><input type="checkbox" id="farnsworth"><span></span></span></div>
+        <div class="field sub"><label class="label" for="effectiveWPM">Overall speed</label>
+          <span class="value"><input type="number" id="effectiveWPM" min="3" max="49" step="1" inputmode="numeric"> WPM</span>
+          <span class="stepper"><button type="button" data-for="effectiveWPM" data-step="-1" aria-label="Slower overall">−</button><button type="button" data-for="effectiveWPM" data-step="1" aria-label="Faster overall">+</button></span></div>
+      </div>
+
+      <div class="section-title">QSOs</div>
+      <div class="group">
+        <div class="field"><label class="label" for="sending">Operators<small>How well the stations send</small></label>
+          <select id="sending"><option value="mixed">Mixed (realistic)</option><option value="computer">Computer</option>
+            <option value="expert">Expert</option><option value="good">Good</option>
+            <option value="average">Average</option><option value="beginner">Beginner</option></select></div>
+        <div class="field" id="contactsRow"><label class="label" for="contacts">Number of contacts<small>In activations, pile-ups and contests</small></label>
+          <span class="value"><input type="number" id="contacts" min="1" max="20" step="1" inputmode="numeric"></span>
+          <span class="stepper"><button type="button" data-for="contacts" data-step="-1" aria-label="Fewer contacts">−</button><button type="button" data-for="contacts" data-step="1" aria-label="More contacts">+</button></span></div>
+      </div>
+
+      <div class="section-title">Band</div>
+      <div class="group">
+        <div class="field"><label class="label" for="noise">Noise</label>
+          <select id="noise"><option value="off">Off</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+        <div class="field"><label class="label" for="qrn">Static (QRN)</label><span class="switch"><input type="checkbox" id="qrn"><span></span></span></div>
+        <div class="field"><label class="label" for="qrm">Other stations (QRM)</label><span class="switch"><input type="checkbox" id="qrm"><span></span></span></div>
+        <div class="field"><label class="label" for="qsb">Fading (QSB)</label><span class="switch"><input type="checkbox" id="qsb"><span></span></span></div>
+        <div class="field"><label class="label" for="tone">Tone</label>
+          <span class="value"><input type="number" id="tone" min="300" max="1000" step="10" inputmode="numeric"> Hz</span>
+          <span class="stepper"><button type="button" data-for="tone" data-step="-10" aria-label="Lower tone">−</button><button type="button" data-for="tone" data-step="10" aria-label="Higher tone">+</button></span></div>
+        <div class="field sub"><label class="label" for="sameTone">All stations on this tone<small>As when you tune each one in</small></label>
+          <span class="switch"><input type="checkbox" id="sameTone"><span></span></span></div>
+      </div>
+
+      <div class="section-title">You</div>
+      <div class="group">
+        <div class="field"><label class="label" for="myCall">Your callsign</label>
+          <input type="text" id="myCall" autocapitalize="characters" autocomplete="off" spellcheck="false"></div>
+        <div class="field sub"><label class="label" for="myName">Your name</label>
+          <input type="text" id="myName" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Made up if blank" maxlength="12"></div>
+        <div class="field sub"><label class="label" for="myQTH">Your QTH</label>
+          <input type="text" id="myQTH" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="Made up if blank" maxlength="20"></div>
+        <div class="field"><label class="label" for="includeMe">Put my call in QSOs</label>
+          <select id="includeMe"><option value="never">Never</option><option value="sometimes">Sometimes</option><option value="always">Always</option></select></div>
+      </div>
+      <p class="sheet-note">Speed, noise, fading and tone change the QSO you’re hearing; the rest apply to the next one.</p>
+    </div>
+  </div>
+</dialog>
+
+<section class="help" id="help">
     <div class="cols">
       <div>
         <h2>The player</h2>
+        <div class="group">
         <ul>
           <li><strong>New QSO</strong> makes a contact of the kind chosen and plays it. <em>Any</em> picks a different kind each time.</li>
-          <li>Play and pause with the big button. The buttons beside it go back to the start and step from over to over; tap an over to hear it from there.</li>
+          <li>Play and pause with the big button. The buttons beside it step from over to over, and the circular arrow below goes back to the start; tap an over to hear it from there.</li>
           <li>The <strong>Text</strong> button sets when the text is shown: <em>Always</em> (each character lights up as it's sent), <em>After each over</em>, or <em>Off</em>.</li>
-          <li>The speed button opens Settings.</li>
-          <li><strong>Share</strong> copies a link to your settings, to bookmark or send, or to the QSO you're hearing, so someone else can copy exactly the same contact.</li>
+          <li><strong>Settings</strong> is the button at the top right; the speed at the bottom right opens it too.</li>
+          <li><strong>Share</strong> (top left) copies a link to your settings, to bookmark or send, or to the QSO you're hearing, so someone else can copy exactly the same contact.</li>
           <li>Keys: <kbd>Space</kbd> play or pause, <kbd>←</kbd> <kbd>→</kbd> previous or next over, <kbd>T</kbd> when to show the text.</li>
         </ul>
+        </div>
       </div>
       <div>
         <h2>Settings</h2>
+        <div class="group">
         <ul>
           <li><strong>Farnsworth spacing</strong> sends each character at your Speed but leaves longer gaps between them, so the overall rate is the Overall speed. A good way to copy faster characters before you can keep up with them.</li>
           <li><strong>Static (QRN)</strong> adds crashes from lightning, <strong>Other stations (QRM)</strong> puts other signals and tuning nearby, and <strong>Fading (QSB)</strong> makes signals rise and fall.</li>
@@ -388,29 +382,33 @@
           <li><strong>Number of contacts</strong>: in activations, pile-ups and contests, how many separate contacts the station on frequency makes, one after another, before signing off. At 1 you hear a single exchange; raise it for a longer session. Ragchews and short QSOs are always one contact.</li>
           <li><strong>Operators</strong> sets how well the stations send; <em>Mixed</em> is like the real bands.</li>
         </ul>
+        </div>
       </div>
       <div>
         <h2>Practising</h2>
+        <div class="group">
         <ul>
           <li>Hide the text and copy on paper or in your head: calls, names, reports, QTHs.</li>
           <li>Don't stop on a missed letter; pick up the next word.</li>
           <li>Start a few WPM below your comfortable speed, or turn on Farnsworth spacing for more time between characters.</li>
           <li>Speed, noise, fading and tone change the QSO you're listening to, so you can go back over it.</li>
         </ul>
+        </div>
       </div>
       <div>
         <h2>About</h2>
+        <div class="group">
         <p>Each QSO is generated when you ask for one, so no two are the same. Callsigns follow real formats, but the stations, names and QTHs are fictional.</p>
         <p>It all runs in your browser; nothing is sent anywhere, and settings are kept on this device. A long ragchew takes a second or so to make.</p>
         <p>Works offline: after your first visit it opens and makes QSOs without a connection. On a phone, add it to your Home Screen (in Safari, Share then Add to Home Screen) to open it like an app.</p>
         <p>No sound on an iPhone? Check the volume.</p>
         <p>Visits and the kinds of QSO made are counted anonymously, without cookies (<a href="https://www.goatcounter.com/">GoatCounter</a>). Your callsign, name and QTH are never sent.</p>
+        </div>
       </div>
     </div>
-    <footer class="site">Mock QSO · <a href="https://g3ajm.radio/">G3AJM</a> · 73</footer>
-  </div>
+  <footer class="site">Mock QSO · <a href="https://g3ajm.radio/">G3AJM</a> · 73</footer>
 </section>
 
-<script type="module" src="app.js?v=d21b38d"></script>
+<script type="module" src="app.js?v=89544ec"></script>
 </body>
 </html>

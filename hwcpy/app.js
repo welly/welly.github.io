@@ -510,10 +510,10 @@ function speak(text, token) {
     speaking.add(u);
     let done = false;
     const finish = () => { if (done) return; done = true; speaking.delete(u); clearTimeout(limit); resolve(); };
-    // Some engines never send `end` (or are stopped in the background); don't hang the player. A paused
-    // engine gets one nudge first; then the utterance is cleared, so it can't linger and hold up the next.
-    const expected = 3000 + text.length * 150 / Math.max(0.5, u.rate);
-    let limit = setTimeout(function check(nudged) {
+    // Some engines never send `end` (or are stopped in the background); don't hang the player. The limit
+    // runs from the voice starting (6 s to start at all); a paused engine gets one nudge, then the
+    // utterance is cleared, so it can't linger and hold up the next.
+    const check = (nudged) => {
       debug(`speech gave no end event (speaking ${speechSynthesis.speaking}, paused ${speechSynthesis.paused}, pending ${speechSynthesis.pending})`);
       if (!nudged && speechSynthesis.paused) {
         speechSynthesis.resume();
@@ -522,8 +522,13 @@ function speak(text, token) {
       }
       speechSynthesis.cancel();
       finish();
-    }, expected);
-    u.onstart = () => debug(`speech started: "${u.text}"`);
+    };
+    let limit = setTimeout(() => check(false), 6000);
+    const restartLimit = () => {
+      clearTimeout(limit);
+      limit = setTimeout(() => check(false), 4000 + text.length * 200 / Math.max(0.5, u.rate));
+    };
+    u.onstart = () => { debug(`speech started: "${u.text}"`); restartLimit(); };
     u.onend = () => { debug('speech ended'); finish(); };
     u.onerror = (e) => { debug(`speech error: ${e.error}`); finish(); };
     if (token !== run) { finish(); return; }
@@ -539,9 +544,26 @@ function speak(text, token) {
 const LEAD = 0.06; // seconds between deciding and hearing, so buffers start on time
 
 /// Plays from the current position until stopped. `singleSend`: the first item's Morse just once.
+/// How long before the speech the page hands the audio to the voice. On an iPhone the switch takes a
+/// moment, and a voice starting straight after it lost its first sound ("when" heard as "hen").
+const HANDOVER = 0.5;
+
+/// Resolves at `when` (performance.now() time), unless the loop is superseded first.
+function sleepUntil(when, token) {
+  return new Promise((resolve) => {
+    const id = setTimeout(() => { timers.delete(id); resolve(); }, Math.max(0, when - performance.now()));
+    timers.add(id);
+    if (token !== run) { clearTimeout(id); resolve(); }
+  });
+}
+
 async function loop(token, { singleSend = false, resumeGate = null } = {}) {
   let t = ctx.currentTime + LEAD;
   let first = true;
+  /// When the last Morse or courtesy tone ends (AudioContext time): the hand-over can't start before it.
+  let soundEnd = t;
+  /// Seconds taken from the next pause, because taking the audio back after the speech took that long.
+  let catchUp = 0;
   while (token === run && current) {
     const index = current.order[current.position];
     let steps, samples;
@@ -569,6 +591,7 @@ async function loop(token, { singleSend = false, resumeGate = null } = {}) {
         const play_ = s.play;
         at(t, () => setPhase(s.replay ? 'replaying' : 'sending', play_), token);
         t += s.count / ctx.sampleRate;
+        soundEnd = t;
         if (i === lastSend && steps.slice(i + 1).some((x) => x.type === 'speech' || x.type === 'morse')) {
           await until(t, token);
           if (token !== run) return;
@@ -582,21 +605,30 @@ async function loop(token, { singleSend = false, resumeGate = null } = {}) {
       } else if (s.type === 'courtesy') {
         play(samples, s.offset, s.count, t, courtesyGain);
         t += s.count / ctx.sampleRate;
+        soundEnd = t;
       } else if (s.type === 'silence') {
         // The pause before next starts after the last sound of the item.
         if (!steps.slice(i).some((x) => x.type === 'morse' || x.type === 'speech')) at(t, () => setPhase('between'), token);
-        t += s.seconds;
+        const used = Math.min(catchUp, s.seconds);
+        catchUp -= used;
+        t += s.seconds - used;
       } else if (s.type === 'speech') {
-        await until(t, token);
+        // Hand the audio to the voice (see speechHoldsAudio) during the silence before it, so the switch
+        // is over when the voice starts; then wait out the rest of that silence.
+        await until(Math.max(soundEnd, t - HANDOVER), token);
+        if (token !== run) return;
+        // At least a moment on an iPhone, even when the speech follows straight on (after auto-pause).
+        const speakAt = performance.now() + Math.max(Math.max(0, t - ctx.currentTime), IOS ? 0.3 : 0) * 1000;
+        speechHoldsAudio = true;
+        await ctx.suspend().catch(() => { });
+        debug(`audio ${ctx.state} for the speech`);
+        await sleepUntil(speakAt, token);
         if (token !== run) return;
         setPhase('speaking');
         revealed = true;
         render();
-        // Hand the audio to the voice, and take it back afterwards (see speechHoldsAudio).
-        speechHoldsAudio = true;
-        await ctx.suspend().catch(() => { });
-        debug(`audio ${ctx.state} for the speech`);
         await speak(s.text, token);
+        const spokenAt = performance.now();
         speechHoldsAudio = false;
         if (token !== run) return;
         if (!(await resumeAudio())) {
@@ -608,6 +640,11 @@ async function loop(token, { singleSend = false, resumeGate = null } = {}) {
         }
         if (token !== run) return;
         t = ctx.currentTime + LEAD;
+        soundEnd = t;
+        // Taking the audio back takes a while on an iPhone (about 0.8 s): count it as part of the pause
+        // that follows, so the gap is the one set.
+        catchUp = (performance.now() - spokenAt) / 1000;
+        if (catchUp > 0.05) debug(`taking the audio back took ${catchUp.toFixed(2)} s`);
       }
     }
     // Next item, unless the session's time is up.
@@ -656,6 +693,11 @@ function noteSession() { if (sessionMark) sessionPlayed += (performance.now() - 
 
 function start({ singleSend = false } = {}) {
   if (!current || !engine) return;
+  // iPhone Safari mutes the voice in silent mode (the Morse still plays), and a page can't tell.
+  if (IOS && settings.playSpeech && !store.get('silentHintShown', false)) {
+    store.set('silentHintShown', true);
+    toast('If you can’t hear the voice, turn off silent mode.');
+  }
   const resumeGate = gate;
   // Stop anything still going first: cancelling speech after unlocking would cancel the unlock.
   halt();
@@ -960,7 +1002,7 @@ function renderSettings() {
       stepper('Rise', null, 'riseMs', { min: 1, max: () => 20, format: (x) => `${x} ms` }),
       stepper('Fall', null, 'fallMs', { min: 1, max: () => 20, format: (x) => `${x} ms` })),
     ...sec('Speech',
-      toggle('Play speech', null, 'playSpeech'),
+      toggle('Play speech', IOS ? 'On an iPhone, turn off silent mode to hear it' : null, 'playSpeech'),
       volume('Speech volume', 'speechVolume'),
       picker('Language', langs.length ? null : 'This browser has no voices', settings.speechLanguage, [['', 'System'], ...langs],
         (x) => { settings.speechLanguage = x; changed(); })),
@@ -1027,6 +1069,16 @@ $('contentsBtn').addEventListener('click', () => {
 });
 
 // MARK: Start-up
+
+// Leaving Safari or locking the phone pauses, as the owner asked (2026-11-24): practice is for when
+// you're looking at the page. Play carries on from the same item.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden' && (playing || gate)) {
+    debug('page hidden: pausing');
+    pause();
+  }
+});
+window.addEventListener('pagehide', () => { if (playing || gate) pause(); });
 
 // A phone has no console: show anything that goes wrong.
 window.addEventListener('error', (e) => showError(`Something went wrong: ${e.message}`));

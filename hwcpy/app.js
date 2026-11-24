@@ -409,6 +409,8 @@ function audio() {
     ctx = new AudioContext({ latencyHint: 'playback' });
     cwGain = ctx.createGain(); cwGain.connect(ctx.destination);
     courtesyGain = ctx.createGain(); courtesyGain.connect(ctx.destination);
+    // The Morse is rendered at this rate, so the page itself never resamples it.
+    debug(`audio at ${ctx.sampleRate} Hz, latency ${((ctx.baseLatency ?? 0) * 1000).toFixed(0)} ms`);
     // Safari suspends or interrupts the audio (when speech takes over the audio session, a call comes in,
     // or the page is hidden). While playing, ask for it back; if that fails, pause properly rather than
     // carrying on in silence.
@@ -736,7 +738,7 @@ function noteSession() { if (sessionMark) sessionPlayed += (performance.now() - 
 
 function start({ singleSend = false } = {}) {
   if (!current || !engine) return;
-  // iPhone Safari mutes the voice in silent mode (the Morse still plays), and a page can't tell.
+  // iPhone and iPad Safari mute the voice in silent mode (the Morse still plays), and a page can't tell.
   if (IOS && settings.playSpeech && !store.get('silentHintShown', false)) {
     store.set('silentHintShown', true);
     toast('If you can’t hear the voice, turn off silent mode.');
@@ -834,6 +836,13 @@ $('autoPauseBtn').addEventListener('click', () => {
   if (autoPause && playing && phase === 'sending') { pause(); start(); }
   render();
 });
+// The same saved setting as Settings ▸ Hide text until spoken; takes effect on the current item at once.
+$('hideTextBtn').addEventListener('click', () => {
+  settings.hideTextUntilSpoken = !settings.hideTextUntilSpoken;
+  if (settings.hideTextUntilSpoken) track('hide-text/on');
+  saveSettings();
+  render();
+});
 document.addEventListener('keydown', (e) => {
   if (e.target.closest('input, select, textarea, dialog') || !current) return;
   if (e.key === ' ') { e.preventDefault(); togglePlay(); }
@@ -871,6 +880,7 @@ function render() {
   $('play').setAttribute('aria-label', playing ? 'Pause' : 'Play');
   $('shuffleBtn').setAttribute('aria-pressed', String(settings.shuffle));
   $('autoPauseBtn').setAttribute('aria-pressed', String(autoPause));
+  $('hideTextBtn').setAttribute('aria-pressed', String(settings.hideTextUntilSpoken));
   $('speedBtn').textContent = speedSummary();
   $('error').hidden = !errorText;
   $('error').textContent = errorText;
@@ -928,6 +938,9 @@ function toast(message) {
 
 /// iPhone and iPad (iPadOS reports itself as a Mac, but has touch).
 const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+/// iPhone only: where Safari's voice is unreliable. On an iPad mini (6th gen) the owner found it works
+/// well (2026-11-24), so the notes about late or clipped speech are for iPhone.
+const IPHONE = /iPhone|iPod/.test(navigator.userAgent);
 /// Lock-screen and media-key controls. Not on iOS: there the page registered as a media player treats
 /// the voice as another player taking over, and iOS pauses the page or stalls the speech (seen on an
 /// iPhone, 2026-11-24). It only ever showed the title there anyway, with no working buttons.
@@ -1052,7 +1065,7 @@ function renderSettings() {
       stepper('Rise', null, 'riseMs', { min: 1, max: () => 20, format: (x) => `${x} ms` }),
       stepper('Fall', null, 'fallMs', { min: 1, max: () => 20, format: (x) => `${x} ms` })),
     ...sec('Speech',
-      toggle('Play speech', IOS ? 'On iPhone and iPad the voice can start late or be clipped, and silent mode mutes it' : null, 'playSpeech'),
+      toggle('Play speech', IPHONE ? 'On iPhone the voice can start late or be clipped, and silent mode mutes it' : IOS ? 'Silent mode mutes the voice' : null, 'playSpeech'),
       volume('Speech volume', 'speechVolume'),
       picker('Language', langs.length ? null : 'This browser has no voices', settings.speechLanguage, [['', 'System'], ...langs],
         (x) => { settings.speechLanguage = x; changed(); })),
@@ -1136,16 +1149,16 @@ window.addEventListener('unhandledrejection', (e) => showError(`Something went w
 
 showTab(tab);
 countVisit();
-/// iPhone and iPad: Safari's voice can't be timed reliably (tested 2026-11-24: late starts, clipped or
+/// iPhone: Safari's voice can't be timed reliably (tested 2026-11-24: late starts, clipped or
 /// lost words, whatever the page does with its own audio). Say so at the top of the library and of the
 /// player (where a phone opens straight to, with the library hidden), until OK in either dismisses both.
 /// When the two are side by side (wide screens), only the library's shows.
 function iosNotice() {
-  if (!IOS || store.get('iosNoticeDismissed', false)) return;
+  if (!IPHONE || store.get('iosNoticeDismissed', false)) return;
   const notes = [];
   const note = (extraClass) => {
     const node = el('div', { class: `notice ${extraClass}`, role: 'note' },
-      el('p', {}, el('strong', {}, 'On iPhone and iPad'), ' the Morse plays exactly, but Safari’s voice can start late, be clipped, or skip a word now and then. It works best on a computer or an Android phone.'),
+      el('p', {}, el('strong', {}, 'On iPhone'), ' the Morse plays exactly, but Safari’s voice can start late, be clipped, or skip a word now and then. It works best on a computer, an iPad or an Android phone.'),
       el('p', {}, 'If you can’t hear the voice at all, turn off silent mode.'),
       el('button', { class: 'link-btn', onclick: () => { store.set('iosNoticeDismissed', true); for (const n of notes) n.remove(); } }, 'OK'));
     notes.push(node);

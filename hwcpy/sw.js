@@ -6,7 +6,7 @@
 // sets.bin (about 6 MB) is fetched whole in the background once the rest is cached; until then built-in sets
 // come from the network with range requests, and afterwards the cached copy answers those ranges itself.
 
-const VERSION = '451f82e';
+const VERSION = '65a21a8';
 const CACHE = `hwcpy-${VERSION}`;
 const v = `?v=${VERSION}`;
 const FILES = [

@@ -510,8 +510,19 @@ function speak(text, token) {
     speaking.add(u);
     let done = false;
     const finish = () => { if (done) return; done = true; speaking.delete(u); clearTimeout(limit); resolve(); };
-    // Some engines never send `end` (or are stopped in the background); don't hang the player.
-    const limit = setTimeout(() => { debug('speech gave no end event: timed out'); finish(); }, 5000 + text.length * 250);
+    // Some engines never send `end` (or are stopped in the background); don't hang the player. A paused
+    // engine gets one nudge first; then the utterance is cleared, so it can't linger and hold up the next.
+    const expected = 3000 + text.length * 150 / Math.max(0.5, u.rate);
+    let limit = setTimeout(function check(nudged) {
+      debug(`speech gave no end event (speaking ${speechSynthesis.speaking}, paused ${speechSynthesis.paused}, pending ${speechSynthesis.pending})`);
+      if (!nudged && speechSynthesis.paused) {
+        speechSynthesis.resume();
+        limit = setTimeout(() => check(true), 2000);
+        return;
+      }
+      speechSynthesis.cancel();
+      finish();
+    }, expected);
     u.onstart = () => debug(`speech started: "${u.text}"`);
     u.onend = () => { debug('speech ended'); finish(); };
     u.onerror = (e) => { debug(`speech error: ${e.error}`); finish(); };
@@ -822,8 +833,15 @@ function toast(message) {
 
 // MARK: Lock screen and headphone controls (Media Session API)
 
+/// iPhone and iPad (iPadOS reports itself as a Mac, but has touch).
+const IOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+/// Lock-screen and media-key controls. Not on iOS: there the page registered as a media player treats
+/// the voice as another player taking over, and iOS pauses the page or stalls the speech (seen on an
+/// iPhone, 2026-11-24). It only ever showed the title there anyway, with no working buttons.
+const MEDIA_SESSION = 'mediaSession' in navigator && !IOS;
+
 function updateMediaSession() {
-  if (!('mediaSession' in navigator)) return;
+  if (!MEDIA_SESSION) return;
   const ms = navigator.mediaSession;
   if (!current) { ms.metadata = null; ms.playbackState = 'none'; return; }
   const item = current.items[current.order[current.position]];
@@ -835,7 +853,7 @@ function updateMediaSession() {
   });
   ms.playbackState = playing ? 'playing' : 'paused';
 }
-if ('mediaSession' in navigator) {
+if (MEDIA_SESSION) {
   const handlers = {
     play: () => { debug('media key: play'); if (!playing) start(); },
     // Handing the audio to the voice can make iOS send a pause of its own; ignore that one.
